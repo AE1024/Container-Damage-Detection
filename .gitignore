@@ -1,10 +1,6 @@
 # Sanal ortam
 venv/
 
-# YOLO model dosyaları
-*.pt
-*.weights
-best/
 # Python önbellekleri
 __pycache__/
 *.py[cod]
