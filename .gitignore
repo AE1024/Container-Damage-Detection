@@ -9,7 +9,7 @@ best/
 __pycache__/
 *.py[cod]
 
-.claude/
+.claude
 
 # Çevre değişkenleri
 .env
