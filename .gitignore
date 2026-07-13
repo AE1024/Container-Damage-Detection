@@ -1,0 +1,17 @@
+# Sanal ortam
+venv/
+
+# YOLO model dosyaları
+*.pt
+*.weights
+best/
+# Python önbellekleri
+__pycache__/
+*.py[cod]
+
+# Çevre değişkenleri
+.env
+
+# İşletim sistemi dosyaları
+.DS_Store
+Thumbs.db
