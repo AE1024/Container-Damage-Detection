@@ -1,15 +1,18 @@
+import os
 from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
+from dotenv import load_dotenv
 
-SECRET_KEY = "port-konteyner-gizli-anahtar-2024"
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY", "port-konteyner-gizli-anahtar-2024")
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_HOURS = 8
 
 
 def create_access_token(data: dict) -> str:
     payload = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRE_HOURS)
-    payload["exp"] = expire
+    payload["exp"] = datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRE_HOURS)
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 

@@ -1,21 +1,10 @@
 from pydantic import BaseModel, field_validator
-import re
-
 
 class RegisterRequest(BaseModel):
     first_name: str
-    last_name: str
-    phone: str
-    password: str
-    company: str
-
-    @field_validator("phone")
-    @classmethod
-    def clean_phone(cls, v: str) -> str:
-        cleaned = re.sub(r"\D", "", v)
-        if len(cleaned) < 10:
-            raise ValueError("Telefon numarası en az 10 haneli olmalıdır.")
-        return cleaned
+    last_name:  str
+    company:    str
+    password:   str
 
     @field_validator("password")
     @classmethod
@@ -33,19 +22,19 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    phone: str
-    password: str
+    first_name: str
+    last_name:  str
+    password:   str
 
-    @field_validator("phone")
+    @field_validator("first_name", "last_name")
     @classmethod
-    def clean_phone(cls, v: str) -> str:
-        return re.sub(r"\D", "", v)
-    
+    def not_empty(cls, v: str) -> str:
+        return v.strip()
 
 
 class TokenResponse(BaseModel):
     access_token: str
-    token_type: str = "bearer"
-    full_name: str
-    role: str
-    company: str
+    token_type:   str = "bearer"
+    full_name:    str
+    role:         str
+    company:      str
