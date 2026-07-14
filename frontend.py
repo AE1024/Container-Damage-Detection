@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 st.set_page_config(
-    page_title="Port Konteyner Analiz Sistemi",
+    page_title="Liman Konteyner Analiz Sistemi",
     page_icon="⚓",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -128,6 +128,8 @@ st.markdown("""
   /* Şifre alanındaki yinelenen ikinci göz ikonunu gizle */
   .stTextInput > div > div > button ~ button { display: none !important; }
   [data-testid="InputInstructions"] { display: none !important; }
+
+  /* Tarayıcı autocomplete dropdown'ını gizle */
 
   /* Çıkış butonu kırmızı */
   [data-testid="stButton"]:has(button[kind="secondary"]#cikis_btn) button,
@@ -315,9 +317,20 @@ st.markdown("""
     to   { opacity: 1; transform: translateY(0); }
   }
 </style>
+<script>
+  function disableAutocomplete() {
+    document.querySelectorAll('input').forEach(function(el) {
+      el.setAttribute('autocomplete', 'new-password');
+    });
+  }
+  document.addEventListener('DOMContentLoaded', disableAutocomplete);
+  new MutationObserver(disableAutocomplete).observe(document.body, { childList: true, subtree: true });
+</script>
 """, unsafe_allow_html=True)
 
-API_URL = "http://localhost:8000"
+_BASE    = "http://localhost:8000"
+API_URL  = f"{_BASE}/api/v1"    # versiyonlu endpoint'ler
+HEALTH_URL = f"{_BASE}/health"  # versiyonsuz
 CONTAINER_TYPES = ["Kuru Yük", "Soğutmalı", "Açık Üst", "Platform", "Tank", "Özel Amaçlı"]
 
 for key, default in [
@@ -327,6 +340,10 @@ for key, default in [
     ("kayit_sayisi", 0),
     ("son_kayit_no", None),
     ("cikis_onay", False),
+    ("kayit_basarili", None),
+    ("list_limit", 10),
+    ("list_date_from", None),
+    ("list_date_to", None),
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
@@ -528,13 +545,27 @@ def show_app():
 
     # ── Sidebar ──────────────────────────────────────────────────────────────
     with st.sidebar:
+        # Health check
+        try:
+            h = requests.get(HEALTH_URL, timeout=3).json()
+            db_ok    = h.get("database", {}).get("status") == "ok"
+            model_ok = h.get("model",    {}).get("status") == "ok"
+        except Exception:
+            db_ok = model_ok = False
+
+        db_icon    = "🟢" if db_ok    else "🔴"
+        model_icon = "🟢" if model_ok else "🔴"
+        db_lbl     = "MongoDB bağlı"    if db_ok    else "MongoDB bağlanamadı"
+        model_lbl  = "Model yüklü"      if model_ok else "Model yüklenmedi"
+
         st.markdown(f"""
         <div class="user-badge">
           <div class="ub-name">👤 {user['full_name']}</div>
           <div class="ub-role">{user['role']} &nbsp;·&nbsp; {user['company']}</div>
         </div>
         <div class="db-badge">
-          🟢 &nbsp;MongoDB bağlı
+          {db_icon} &nbsp;{db_lbl}<br>
+          <span style="font-size:0.75rem">{model_icon} &nbsp;{model_lbl}</span>
         </div>
         """, unsafe_allow_html=True)
 
@@ -559,11 +590,10 @@ def show_app():
             )
         st.markdown("---")
         if st.session_state.analiz_sonucu:
-            s = st.session_state.analiz_sonucu
+            results_list = st.session_state.analiz_sonucu
             st.markdown("**Son Analiz**")
-            st.markdown(f"Sonuç: `{s['hasar']}`")
-            st.markdown(f"Güven: `{s['skor']}`")
-            st.markdown(f"Tespit: `{s.get('tespit_sayisi', 0)}`")
+            for i, s in enumerate(results_list):
+                st.markdown(f"Resim {i+1}: `{s['hasar']}` — `{s['skor']}`")
             if st.button("Analizi Temizle", use_container_width=True):
                 st.session_state.analiz_sonucu = None
                 st.rerun()
@@ -576,73 +606,97 @@ def show_app():
         with st.container(border=True):
             st.markdown('<p class="card-title">📷 &nbsp;Hasar Görüntü Analizi</p>', unsafe_allow_html=True)
 
-            uploaded_file = st.file_uploader(
-                "Fotoğraf yükle",
+            uploaded_files = st.file_uploader(
+                "Fotoğraf yükle (en fazla 3)",
                 type=["jpg", "jpeg", "png", "webp"],
+                accept_multiple_files=True,
                 label_visibility="collapsed",
             )
 
-            if uploaded_file:
-                # Yeni dosya seçildiyse önceki analizi temizle
-                prev = st.session_state.get("_last_file")
-                cur  = f"{uploaded_file.name}_{uploaded_file.size}"
-                if prev != cur:
-                    st.session_state.analiz_sonucu  = None
-                    st.session_state["_last_file"]  = cur
+            # Max 3 kontrolü
+            if uploaded_files and len(uploaded_files) > 3:
+                st.warning("En fazla 3 resim yükleyebilirsiniz. İlk 3 resim kullanılacak.")
+                uploaded_files = uploaded_files[:3]
 
-                # Analiz yapıldıysa bbox'lı görüntüyü, yoksa orijinali göster
-                if st.session_state.analiz_sonucu and st.session_state.analiz_sonucu.get("annotated_img"):
-                    import base64
-                    img_bytes = base64.b64decode(st.session_state.analiz_sonucu["annotated_img"])
-                    st.image(img_bytes, use_container_width=True)
-                else:
-                    st.image(uploaded_file, use_container_width=True)
+            if uploaded_files:
+                # Dosya seti değiştiyse analizi temizle
+                cur_key = "_".join(f"{f.name}_{f.size}" for f in uploaded_files)
+                if st.session_state.get("_last_file") != cur_key:
+                    st.session_state.analiz_sonucu = None
+                    st.session_state["_last_file"] = cur_key
+
+                import base64 as _b64
+
+                # Sonuç varsa annotated görüntüleri, yoksa originalleri göster
+                results_list = st.session_state.analiz_sonucu or []
+                for idx, uf in enumerate(uploaded_files):
+                    if results_list and idx < len(results_list) and results_list[idx].get("annotated_img"):
+                        img_bytes = _b64.b64decode(results_list[idx]["annotated_img"])
+                        st.image(img_bytes, use_container_width=True)
+                    else:
+                        st.image(uf, use_container_width=True)
 
                 st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
 
                 if st.button("Analizi Başlat", use_container_width=True):
                     with st.spinner("YOLO modeli analiz yapıyor..."):
-                        uploaded_file.seek(0)
+                        files_payload = [
+                            ("files", (uf.name, uf.getvalue(), uf.type))
+                            for uf in uploaded_files
+                        ]
                         resp = requests.post(
                             f"{API_URL}/containers/analyze",
-                            files={"file": (uploaded_file.name, uploaded_file.read(), uploaded_file.type)},
+                            files=files_payload,
                             headers=headers,
-                            timeout=30,
+                            timeout=60,
                         )
                     if resp.status_code == 200:
-                        st.session_state.analiz_sonucu = resp.json()
+                        st.session_state.analiz_sonucu = resp.json().get("results", [])
                         st.rerun()
                     else:
-                        st.error(f"Analiz hatası: {resp.json().get('detail', resp.text)}")
+                        try:
+                            detail = resp.json().get("detail", resp.text)
+                        except Exception:
+                            detail = resp.text or f"HTTP {resp.status_code}"
+                        if resp.status_code == 413:
+                            st.error(f"Dosya çok büyük: {detail}")
+                        else:
+                            st.error(f"Analiz hatası: {detail}")
 
+                # Sonuç kartları — her resim için
                 if st.session_state.analiz_sonucu:
-                    s = st.session_state.analiz_sonucu
-                    renk = "#ef4444" if s.get("hasar_var") else "#22c55e"
-                    st.markdown(f"""
-                    <div class="analiz-sonuc">
-                      <div class="analiz-row">
-                        <div class="analiz-item">
-                          <div class="ai-label">Durum</div>
-                          <div class="ai-val" style="font-size:.84rem;color:{renk}">
-                            {"⚠ Hasar Var" if s.get("hasar_var") else "✓ Temiz"}
+                    for idx, s in enumerate(st.session_state.analiz_sonucu):
+                        fname = uploaded_files[idx].name if idx < len(uploaded_files) else f"Resim {idx+1}"
+                        renk  = "#ef4444" if s.get("hasar_var") else "#22c55e"
+                        st.markdown(f"""
+                        <div class="analiz-sonuc" style="margin-bottom:8px">
+                          <div style="font-size:.75rem;color:#94a3b8;margin-bottom:4px">
+                            📄 {fname}
+                          </div>
+                          <div class="analiz-row">
+                            <div class="analiz-item">
+                              <div class="ai-label">Durum</div>
+                              <div class="ai-val" style="font-size:.84rem;color:{renk}">
+                                {"⚠ Hasar Var" if s.get("hasar_var") else "✓ Temiz"}
+                              </div>
+                            </div>
+                            <div class="analiz-item">
+                              <div class="ai-label">Güven</div>
+                              <div class="ai-val">{s['skor']}</div>
+                            </div>
+                            <div class="analiz-item">
+                              <div class="ai-label">Tespit</div>
+                              <div class="ai-val">{s.get('tespit_sayisi', 0)}</div>
+                            </div>
                           </div>
                         </div>
-                        <div class="analiz-item">
-                          <div class="ai-label">Güven</div>
-                          <div class="ai-val">{s['skor']}</div>
-                        </div>
-                        <div class="analiz-item">
-                          <div class="ai-label">Tespit Sayısı</div>
-                          <div class="ai-val">{s.get('tespit_sayisi', 0)}</div>
-                        </div>
-                      </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
             else:
                 st.markdown("""
                 <div class="empty-state">
                   <div class="es-icon">🖼️</div>
-                  Konteyner fotoğrafı yükleyerek<br>hasar analizini başlatın
+                  Konteyner fotoğrafı yükleyerek<br>hasar analizini başlatın<br>
+                  <span style="font-size:.75rem;color:#94a3b8">(en fazla 3 resim)</span>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -693,11 +747,13 @@ def show_app():
                         headers=headers,
                         timeout=5,
                     )
-                    if resp.status_code == 200:
+                    if resp.status_code in (200, 201):
                         st.session_state.kayit_sayisi += 1
                         st.session_state.son_kayit_no = container_no
-                        st.toast(f"✓ {container_no} başarıyla kaydedildi!", icon="🟢")
+                        st.session_state.kayit_basarili = container_no
                         st.rerun()
+                    elif resp.status_code == 409:
+                        st.error(f"Bu konteyner numarası ({container_no}) zaten kayıtlı.")
                     elif resp.status_code == 401:
                         st.error("Oturum süresi doldu. Lütfen tekrar giriş yapın.")
                         st.session_state.token = None
@@ -708,39 +764,108 @@ def show_app():
                 except requests.exceptions.ConnectionError:
                     st.warning("Backend'e bağlanılamadı — sunucunun çalıştığından emin olun.")
 
+        if st.session_state.kayit_basarili:
+            st.markdown(f"""
+            <div style="
+                background:#dcfce7; color:#15803d;
+                border:1px solid #86efac; border-radius:8px;
+                padding:10px 14px; font-size:.88rem; font-weight:600;
+                display:flex; align-items:center; gap:8px; margin-top:8px;
+            ">
+                ✅ &nbsp;<b>{st.session_state.kayit_basarili}</b> başarıyla veritabanına kaydedildi.
+            </div>
+            """, unsafe_allow_html=True)
+            st.session_state.kayit_basarili = None
+
     # ── Kayıtlı Konteynerlar ─────────────────────────────────────────────────
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown('<p class="card-title">📦 &nbsp;Kayıtlı Hasarlı Konteynerlar</p>', unsafe_allow_html=True)
 
+    # ── Filtre Satırı ────────────────────────────────────────────────────────
+    import datetime as _dt
+    fc1, fc2, fc3 = st.columns([2, 2, 3])
+
+    with fc1:
+        df_val = st.date_input(
+            "Başlangıç Tarihi",
+            value=st.session_state.list_date_from,
+            key="df_from",
+            format="DD.MM.YYYY",
+        )
+        st.session_state.list_date_from = df_val if df_val else None
+
+    with fc2:
+        dt_val = st.date_input(
+            "Bitiş Tarihi",
+            value=st.session_state.list_date_to,
+            key="df_to",
+            format="DD.MM.YYYY",
+        )
+        st.session_state.list_date_to = dt_val if dt_val else None
+
+    with fc3:
+        st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+        st.markdown(
+            "<span style='font-size:0.75rem;font-weight:600;color:#64748b'>Gösterilecek kayıt sayısı</span>",
+            unsafe_allow_html=True,
+        )
+        lb1, lb2, lb3, lb4 = st.columns([1, 1, 1, 3])
+        for col, n in zip([lb1, lb2, lb3], [5, 10, 20]):
+            active = st.session_state.list_limit == n
+            style  = "background:#1d4ed8;color:#fff;" if active else "background:#e2e8f0;color:#334155;"
+            if col.button(str(n), key=f"lim_{n}",
+                          help=f"Son {n} kaydı göster",
+                          use_container_width=True):
+                st.session_state.list_limit = n
+                st.rerun()
+
+    # Filtreleri temizle butonu
+    if st.session_state.list_date_from or st.session_state.list_date_to:
+        if st.button("✕ Filtreyi Temizle", key="clear_filter"):
+            st.session_state.list_date_from = None
+            st.session_state.list_date_to   = None
+            st.rerun()
+
+    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+
+    # ── API çağrısı ──────────────────────────────────────────────────────────
+    params: dict = {"limit": st.session_state.list_limit}
+    if st.session_state.list_date_from:
+        params["date_from"] = str(st.session_state.list_date_from)
+    if st.session_state.list_date_to:
+        params["date_to"] = str(st.session_state.list_date_to)
+
     try:
         list_resp = requests.get(
             f"{API_URL}/containers/list",
             headers=headers,
+            params=params,
             timeout=5,
         )
         if list_resp.status_code == 200:
-            data = list_resp.json()
+            data       = list_resp.json()
             containers = data.get("containers", [])
-            total = data.get("total", 0)
+            total      = data.get("total", 0)
 
             if total == 0:
                 st.markdown("""
                 <div class="empty-state">
                   <div class="es-icon">📭</div>
-                  Henüz kayıtlı konteyner yok
+                  Filtreyle eşleşen kayıt bulunamadı
                 </div>
                 """, unsafe_allow_html=True)
             else:
                 st.markdown(
-                    f"<span style='font-size:0.8rem;color:#64748b'>Toplam <b>{total}</b> konteyner</span>",
+                    f"<span style='font-size:0.8rem;color:#64748b'>"
+                    f"<b>{total}</b> kayıt gösteriliyor (limit: {st.session_state.list_limit})</span>",
                     unsafe_allow_html=True,
                 )
                 st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
                 # Başlık satırı
-                hcols = st.columns([2, 1.5, 1.5, 2, 2, 1.5, 0.6])
-                for col, label in zip(hcols, ["Konteyner No", "Tip", "Şirket", "Geliş", "Varış", "Kaydeden", ""]):
+                hcols = st.columns([1.1, 2, 1.4, 1.5, 1.8, 1.8, 1.5, 1.2, 0.5])
+                for col, label in zip(hcols, ["ID", "Konteyner No", "Tip", "Şirket", "Geliş", "Varış", "Kaydeden", "Tarih", ""]):
                     col.markdown(
                         f"<span style='font-size:0.7rem;font-weight:700;color:#1e40af;"
                         f"text-transform:uppercase;letter-spacing:0.5px'>{label}</span>",
@@ -748,16 +873,35 @@ def show_app():
                     )
                 st.markdown("<hr style='margin:4px 0 8px 0;border-color:#bfdbfe'>", unsafe_allow_html=True)
 
-                for c in reversed(containers):
-                    c_no = c.get("container_no", "")
-                    row  = st.columns([2, 1.5, 1.5, 2, 2, 1.5, 0.6])
-                    row[0].markdown(f"**{c_no}**")
-                    row[1].markdown(c.get("container_type", ""))
-                    row[2].markdown(c.get("company_name", ""))
-                    row[3].markdown(c.get("arrive_port", ""))
-                    row[4].markdown(c.get("destination_port", ""))
-                    row[5].markdown(c.get("registered_by", ""))
-                    if row[6].button("🗑", key=f"del_{c_no}", help=f"{c_no} sil"):
+                for c in containers:
+                    c_no     = c.get("container_no", "")
+                    c_id     = c.get("container_id", "—")
+                    short_id = c_id[:8] if c_id != "—" else "—"
+
+                    # Tarih: YYYY-MM-DD → GG.AA.YYYY
+                    raw_date = c.get("created_at", "")
+                    try:
+                        tarih = _dt.date.fromisoformat(raw_date[:10]).strftime("%d.%m.%Y")
+                    except Exception:
+                        tarih = raw_date[:10] if raw_date else "—"
+
+                    row = st.columns([1.1, 2, 1.4, 1.5, 1.8, 1.8, 1.5, 1.2, 0.5])
+                    row[0].markdown(
+                        f"<span style='font-size:0.72rem;color:#64748b;font-family:monospace'"
+                        f" title='{c_id}'>{short_id}…</span>",
+                        unsafe_allow_html=True,
+                    )
+                    row[1].markdown(f"**{c_no}**")
+                    row[2].markdown(c.get("container_type", ""))
+                    row[3].markdown(c.get("company_name", ""))
+                    row[4].markdown(c.get("arrive_port", ""))
+                    row[5].markdown(c.get("destination_port", ""))
+                    row[6].markdown(c.get("registered_by", ""))
+                    row[7].markdown(
+                        f"<span style='font-size:0.8rem;color:#475569'>{tarih}</span>",
+                        unsafe_allow_html=True,
+                    )
+                    if row[8].button("🗑", key=f"del_{c_no}", help=f"{c_no} sil"):
                         try:
                             del_resp = requests.delete(
                                 f"{API_URL}/containers/{c_no}",

@@ -3,8 +3,8 @@ from pydantic import BaseModel, field_validator
 class RegisterRequest(BaseModel):
     first_name: str
     last_name:  str
-    company:    str
-    password:   str
+    company: str
+    password: str
 
     @field_validator("password")
     @classmethod

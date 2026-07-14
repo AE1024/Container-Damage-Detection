@@ -1,14 +1,14 @@
 from pydantic import BaseModel, Field, field_validator
 import re
 
-CONTAINER_TYPES = {
-    "Dry":             "Kuru Yük",
-    "Reefer":          "Soğutmalı",
-    "Open Top":        "Açık Üst",
-    "Flat Rack":       "Platform",
-    "Tank":            "Tank",
-    "Special Purpose": "Özel Amaçlı",
-}
+CONTAINER_TYPES = [
+    "Kuru Yük",
+    "Soğutmalı",
+    "Açık Üst",
+    "Platform",
+    "Tank",
+    "Özel Amaçlı",
+]
 
 
 class ContainerData(BaseModel):
@@ -29,8 +29,8 @@ class ContainerData(BaseModel):
     @field_validator("container_type")
     @classmethod
     def check_container_type(cls, v: str) -> str:
-        if v not in CONTAINER_TYPES.values():
-            raise ValueError(f"Geçerli tipler: {', '.join(CONTAINER_TYPES.values())}")
+        if v not in CONTAINER_TYPES:
+            raise ValueError(f"Geçerli tipler: {', '.join(CONTAINER_TYPES)}")
         return v
 
     @field_validator("company_name")

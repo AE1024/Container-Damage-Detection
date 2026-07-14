@@ -11,11 +11,16 @@ def _verify(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
-def user_exists(first_name: str, last_name: str) -> bool:
-    return users_col.find_one(
-        {"first_name": first_name.strip().lower(), "last_name": last_name.strip().lower()},
-        {"_id": 1},
-    ) is not None
+def user_exists(first_name: str, last_name: str, password: str) -> bool:
+    """Aynı isim + aynı şifre kombinasyonu zaten kayıtlıysa True döner."""
+    users = users_col.find({
+        "first_name": first_name.strip().lower(),
+        "last_name":  last_name.strip().lower(),
+    })
+    for u in users:
+        if _verify(password, u["password_hash"]):
+            return True
+    return False
 
 
 def register_user(first_name: str, last_name: str, company: str, password: str) -> dict:
@@ -32,22 +37,12 @@ def register_user(first_name: str, last_name: str, company: str, password: str) 
 
 
 def authenticate_user(first_name: str, last_name: str, password: str) -> dict | None:
-    user = users_col.find_one({
+    """Aynı isimde birden fazla hesap olabilir; şifreyle doğru olanı bul."""
+    users = users_col.find({
         "first_name": first_name.strip().lower(),
         "last_name":  last_name.strip().lower(),
     })
-    if user and _verify(password, user["password_hash"]):
-        return user
+    for user in users:
+        if _verify(password, user["password_hash"]):
+            return user
     return None
-
-
-def seed_admin() -> None:
-    if not user_exists("admin", "admin"):
-        users_col.insert_one({
-            "first_name":    "admin",
-            "last_name":     "admin",
-            "company":       "YILPORT",
-            "password_hash": _hash("admin123"),
-            "role":          "admin",
-            "created_at":    datetime.now(timezone.utc),
-        })
