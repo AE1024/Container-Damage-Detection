@@ -1,11 +1,11 @@
 # Sanal ortam
-venv/
+.venv/
 
 # Python önbellekleri
 __pycache__/
 *.py[cod]
 
-.claude
+.claude/
 
 # Çevre değişkenleri
 .env
