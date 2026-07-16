@@ -26,12 +26,16 @@ requests==2.34.2
 
 # ── YOLO & Görüntü İşleme ────────────────────────────────────────────────────
 ultralytics==8.4.93
-opencv-python==5.0.0.93
+opencv-python==4.10.0.84
 pillow==12.3.0
 numpy==2.5.1
 torch==2.13.0
 torchvision==0.28.0
 
+# ── Roboflow Inference ───────────────────────────────────────────────────────
+inference-sdk==0.55.0
+huggingface-hub==0.33.0
+
 # ── Test ──────────────────────────────────────────────────────────────────────
 pytest==9.1.1
-httpx==0.28.1                  # FastAPI TestClient için
+httpx==0.28.1                 

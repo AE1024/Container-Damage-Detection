@@ -337,6 +337,7 @@ for key, default in [
     ("token", None),
     ("user", None),
     ("analiz_sonucu", None),
+    ("analiz_yapildi", False),
     ("kayit_sayisi", 0),
     ("son_kayit_no", None),
     ("cikis_onay", False),
@@ -623,6 +624,7 @@ def show_app():
                 cur_key = "_".join(f"{f.name}_{f.size}" for f in uploaded_files)
                 if st.session_state.get("_last_file") != cur_key:
                     st.session_state.analiz_sonucu = None
+                    st.session_state.analiz_yapildi = False
                     st.session_state["_last_file"] = cur_key
 
                 import base64 as _b64
@@ -638,8 +640,17 @@ def show_app():
 
                 st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
 
-                if st.button("Analizi Başlat", use_container_width=True):
-                    with st.spinner("YOLO modeli analiz yapıyor..."):
+                analiz_yapildi = st.session_state.get("analiz_yapildi", False)
+
+                if analiz_yapildi:
+                    st.info("Bu fotoğraflar zaten analiz edildi. Yeni fotoğraf yükleyerek tekrar analiz yapabilirsiniz.")
+
+                if st.button(
+                    "Analizi Başlat",
+                    use_container_width=True,
+                    disabled=analiz_yapildi,
+                ):
+                    with st.spinner("Roboflow modeli analiz yapıyor..."):
                         files_payload = [
                             ("files", (uf.name, uf.getvalue(), uf.type))
                             for uf in uploaded_files
@@ -648,10 +659,11 @@ def show_app():
                             f"{API_URL}/containers/analyze",
                             files=files_payload,
                             headers=headers,
-                            timeout=60,
+                            timeout=120,
                         )
                     if resp.status_code == 200:
                         st.session_state.analiz_sonucu = resp.json().get("results", [])
+                        st.session_state.analiz_yapildi = True
                         st.rerun()
                     else:
                         try:
@@ -660,6 +672,10 @@ def show_app():
                             detail = resp.text or f"HTTP {resp.status_code}"
                         if resp.status_code == 413:
                             st.error(f"Dosya çok büyük: {detail}")
+                        elif resp.status_code == 402:
+                            st.error("Roboflow API kotası doldu. Roboflow hesabınızı kontrol edin.")
+                        elif resp.status_code == 429:
+                            st.error("Çok fazla istek gönderildi. Lütfen birkaç saniye bekleyip tekrar deneyin.")
                         else:
                             st.error(f"Analiz hatası: {detail}")
 
@@ -886,9 +902,10 @@ def show_app():
                         tarih = raw_date[:10] if raw_date else "—"
 
                     row = st.columns([1.1, 2, 1.4, 1.5, 1.8, 1.8, 1.5, 1.2, 0.5])
+                    id_display = f"{short_id}…" if c_id != "—" else "—"
                     row[0].markdown(
                         f"<span style='font-size:0.72rem;color:#64748b;font-family:monospace'"
-                        f" title='{c_id}'>{short_id}…</span>",
+                        f" title='{c_id}'>{id_display}</span>",
                         unsafe_allow_html=True,
                     )
                     row[1].markdown(f"**{c_no}**")

@@ -34,9 +34,15 @@ async def analyze_image(
             )
         image_bytes_list.append(data)
 
-    # CPU-bound YOLO predict'i thread pool'da çalıştır → event loop bloklanmaz
-    loop    = asyncio.get_event_loop()
-    results = await loop.run_in_executor(None, AnalysisService.predict_batch, image_bytes_list)
+    loop = asyncio.get_event_loop()
+    try:
+        results = await loop.run_in_executor(None, AnalysisService.predict_batch, image_bytes_list)
+    except RuntimeError as e:
+        if str(e) == "402":
+            raise HTTPException(status_code=402, detail="Roboflow API kotası doldu. Hesabınızı kontrol edin.")
+        if str(e) == "429":
+            raise HTTPException(status_code=429, detail="Çok fazla istek. Lütfen bekleyin.")
+        raise HTTPException(status_code=500, detail=str(e))
     return {"results": results, "count": len(results)}
 
 

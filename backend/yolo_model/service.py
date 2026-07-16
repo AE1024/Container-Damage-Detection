@@ -2,87 +2,115 @@ import os
 import io
 import base64
 from typing import List
-import cv2
-import numpy as np
-from PIL import Image
-from ultralytics import YOLO
 
-_model: YOLO | None = None
+from PIL import Image, ImageDraw
+from dotenv import load_dotenv
+from inference_sdk import InferenceHTTPClient
 
-_DEFAULT_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "model", "best.pt")
-MODEL_PATH = os.getenv("MODEL_PATH", _DEFAULT_PATH)
+load_dotenv()
+
+RF_API_KEY  = os.getenv("RF_API_KEY", "")
+RF_MODEL_ID = os.getenv("RF_MODEL_ID", "container-damage-ithvn-dsduq/1")
+RF_CONF = float(os.getenv("RF_CONF", "0.25"))
+RF_SERVER = os.getenv("RF_SERVER", "http://localhost:9001")
+
+_client: InferenceHTTPClient | None = None
+_api_ready: bool = False
 
 
 def load_model() -> None:
-    global _model
-    _model = YOLO(os.path.normpath(MODEL_PATH))
+    global _client, _api_ready
+    if not RF_API_KEY:
+        raise RuntimeError("RF_API_KEY .env dosyasında tanımlı değil.")
+    _client = InferenceHTTPClient(
+        api_url=RF_SERVER,
+        api_key=RF_API_KEY,
+    )
+    _api_ready = True
 
 
 def is_model_loaded() -> bool:
-    return _model is not None
+    return _api_ready
 
 
-def _encode_image(bgr_array: np.ndarray) -> str:
-    """BGR numpy array → base64 PNG string."""
-    _, buf = cv2.imencode(".png", bgr_array)
-    return base64.b64encode(buf).decode("utf-8")
+def _draw_boxes(image_bytes: bytes, predictions: list) -> str:
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    draw = ImageDraw.Draw(img)
+    for pred in predictions:
+        x, y, w, h = pred["x"], pred["y"], pred["width"], pred["height"]
+        x0, y0 = x - w / 2, y - h / 2
+        x1, y1 = x + w / 2, y + h / 2
+        label = f"{pred['class']} {int(pred['confidence'] * 100)}%"
+        draw.rectangle([x0, y0, x1, y1], outline="red", width=3)
+        draw.rectangle([x0, y0 - 18, x0 + len(label) * 7, y0], fill="red")
+        draw.text((x0 + 2, y0 - 16), label, fill="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
+
 
 class AnalysisService:
-    """Load YOLO model and provide methods for batch image analysis."""
     @staticmethod
     def predict_batch(image_bytes_list: List[bytes]) -> List[dict]:
-        """Ana orkestratör metot: Listeyi alır, işler ve formatlı sonucu döner."""
-        if _model is None:
-            raise RuntimeError("Model henüz yüklenmedi.")
-
-        # 1. HAZIRLIK: Byte listesindeki her elemanı PIL Image formatına çevir
-        images = []
-        for img_bytes in image_bytes_list:
-            img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-            images.append(img)
-
-        # 2. TAHMİN (PREDICTION): YOLO listeleri otomatik olarak batch (toplu) işler!
-        raw_results = _model.predict(images, imgsz=640, verbose=False)
-
-        # 3. FORMATLAMA (PROCESSING): Her bir resmin sonucunu kendi JSON formatımıza çevir
-        final_responses = []
-        for result in raw_results:
-            formatted_data = AnalysisService._format_single_result(result)
-            final_responses.append(formatted_data)
-
-        return final_responses
+        if not _api_ready or _client is None:
+            raise RuntimeError("Inference client hazır değil.")
+        return [AnalysisService._predict_single(b) for b in image_bytes_list]
 
     @staticmethod
-    def _format_single_result(result) -> dict:
-        """YOLO'dan dönen tek bir sonucu alır, dictionary ve base64'e çevirir."""
-        # result.plot() → BGR numpy array (bounding box + etiketler çizili)
-        annotated_bgr = result.plot()
-        annotated_b64 = _encode_image(annotated_bgr)
+    def _predict_single(img_bytes: bytes) -> dict:
+        img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
 
-        detections = []
-        for box in result.boxes:
-            detections.append({
-                "class":      result.names[int(box.cls)],
-                "confidence": round(float(box.conf), 4),
-                "bbox":       [round(float(x), 1) for x in box.xyxy[0].tolist()],
-            })
+        try:
+            raw = _client.infer(img, model_id=RF_MODEL_ID)
+        except Exception as e:
+            msg = str(e)
+            if "402" in msg:
+                raise RuntimeError("402")
+            if "429" in msg:
+                raise RuntimeError("429")
+            raise
 
-        if detections:
-            best = max(detections, key=lambda d: d["confidence"])
+        predictions = [
+            p for p in raw.get("predictions", [])
+            if p.get("confidence", 0) >= RF_CONF
+        ]
+
+        annotated_b64 = _draw_boxes(img_bytes, predictions)
+
+        if not predictions:
             return {
-                "hasar_var":      True,
-                "hasar":          best["class"].capitalize(),
-                "skor":           f"{int(best['confidence'] * 100)}%",
-                "tespit_sayisi":  len(detections),
-                "detections":     detections,
-                "annotated_img":  annotated_b64,
+                "hasar_var":     False,
+                "hasar":         "Hasar tespit edilmedi",
+                "skor":          "—",
+                "tespit_sayisi": 0,
+                "detections":    [],
+                "annotated_img": annotated_b64,
             }
 
+        detections = [
+            {
+                "class":      p["class"],
+                "confidence": round(p["confidence"], 4),
+                "bbox": [
+                    round(p["x"] - p["width"] / 2, 1),
+                    round(p["y"] - p["height"] / 2, 1),
+                    round(p["x"] + p["width"] / 2, 1),
+                    round(p["y"] + p["height"] / 2, 1),
+                ],
+            }
+            for p in predictions
+        ]
+
+        best = max(detections, key=lambda d: d["confidence"])
+        class_name = best["class"]
+        if class_name.isdigit():
+            class_name = "Damage"
+
         return {
-            "hasar_var":      False,
-            "hasar":          "Hasar tespit edilmedi",
-            "skor":           "—",
-            "tespit_sayisi":  0,
-            "detections":     [],
-            "annotated_img":  annotated_b64,
+            "hasar_var":     True,
+            "hasar":         class_name.capitalize(),
+            "skor":          f"{int(best['confidence'] * 100)}%",
+            "tespit_sayisi": len(detections),
+            "detections":    detections,
+            "annotated_img": annotated_b64,
         }
