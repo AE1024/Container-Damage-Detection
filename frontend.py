@@ -181,6 +181,13 @@ st.markdown("""
     background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%) !important;
     box-shadow: 0 6px 20px rgba(37,99,235,0.4) !important;
   }
+  .stFormSubmitButton > button[data-testid="baseButton-secondaryFormSubmit"] {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
+    box-shadow: 0 4px 12px rgba(100,116,139,0.25) !important;
+  }
+  .stFormSubmitButton > button[data-testid="baseButton-secondaryFormSubmit"]:hover {
+    background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;
+  }
   .stButton > button {
     background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
     color: #fff !important;
@@ -342,6 +349,7 @@ for key, default in [
     ("son_kayit_no", None),
     ("cikis_onay", False),
     ("kayit_basarili", None),
+    ("form_reset_key", 0),
     ("list_limit", 10),
     ("list_date_from", None),
     ("list_date_to", None),
@@ -721,7 +729,7 @@ def show_app():
         with st.container(border=True):
             st.markdown('<p class="card-title">📋 &nbsp;Konteyner Kayıt Formu</p>', unsafe_allow_html=True)
 
-            with st.form("kayit_formu"):
+            with st.form(f"kayit_formu_{st.session_state.form_reset_key}"):
                 col_a, col_b = st.columns(2, gap="medium")
 
                 with col_a:
@@ -734,7 +742,15 @@ def show_app():
                     destination_port = st.text_input("Varış Limanı", placeholder="Rotterdam Limanı")
 
                 st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-                submitted = st.form_submit_button("Veritabanına Kaydet  →", use_container_width=True)
+                btn_col1, btn_col2 = st.columns([3, 1])
+                with btn_col1:
+                    submitted = st.form_submit_button("Veritabanına Kaydet  →", use_container_width=True)
+                with btn_col2:
+                    reset_clicked = st.form_submit_button("↺ Sıfırla", use_container_width=True)
+
+        if reset_clicked:
+            st.session_state.form_reset_key += 1
+            st.rerun()
 
         if submitted:
             hatalar = []

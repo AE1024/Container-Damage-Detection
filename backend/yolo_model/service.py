@@ -3,29 +3,56 @@ import io
 import base64
 from typing import List
 
+import cv2
+import numpy as np
+import requests
 from PIL import Image, ImageDraw
 from dotenv import load_dotenv
-from inference_sdk import InferenceHTTPClient
 
 load_dotenv()
 
 RF_API_KEY  = os.getenv("RF_API_KEY", "")
-RF_MODEL_ID = os.getenv("RF_MODEL_ID", "container-damage-ithvn-dsduq/1")
-RF_CONF = float(os.getenv("RF_CONF", "0.25"))
-RF_SERVER = os.getenv("RF_SERVER", "http://localhost:9001")
+RF_MODEL_ID = os.getenv("RF_MODEL_ID", "")
+RF_SERVER   = os.getenv("RF_SERVER", "https://detect.roboflow.com")
 
-_client: InferenceHTTPClient | None = None
+# Sınıf bazlı confidence eşikleri — .env ile override edilebilir
+CLASS_CONF: dict[str, float] = {
+    "dent": float(os.getenv("RF_CONF_DENT", "0.18")),
+    "rust": float(os.getenv("RF_CONF_RUST", "0.22")),
+    "hole": float(os.getenv("RF_CONF_HOLE", "0.28")),
+}
+DEFAULT_CONF = float(os.getenv("RF_CONF", "0.25"))  # tanımsız sınıflar için
+
+_BLUR_LEVELS = [
+    (80,  0.55),   # çok bulanık  → eşikleri %45 düşür
+    (200, 0.75),   # orta bulanık → eşikleri %25 düşür
+    (400, 0.90),   # hafif bulanık → eşikleri %10 düşür
+]
+
 _api_ready: bool = False
 
 
+def _blur_multiplier(img_bytes: bytes) -> float:
+    arr = np.frombuffer(img_bytes, np.uint8)
+    gray = cv2.imdecode(arr, cv2.IMREAD_GRAYSCALE)
+    if gray is None:
+        return 1.0
+    score = cv2.Laplacian(gray, cv2.CV_64F).var()
+    for threshold, multiplier in _BLUR_LEVELS:
+        if score < threshold:
+            return multiplier
+    return 1.0
+
+
+def _effective_conf(class_name: str, multiplier: float) -> float:
+    base = CLASS_CONF.get(class_name.lower(), DEFAULT_CONF)
+    return max(base * multiplier, 0.08)
+
+
 def load_model() -> None:
-    global _client, _api_ready
+    global _api_ready
     if not RF_API_KEY:
         raise RuntimeError("RF_API_KEY .env dosyasında tanımlı değil.")
-    _client = InferenceHTTPClient(
-        api_url=RF_SERVER,
-        api_key=RF_API_KEY,
-    )
     _api_ready = True
 
 
@@ -49,68 +76,73 @@ def _draw_boxes(image_bytes: bytes, predictions: list) -> str:
     return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
+def _predict_single(img_bytes: bytes) -> dict:
+    multiplier = _blur_multiplier(img_bytes)
+
+    img_b64 = base64.b64encode(img_bytes).decode("utf-8")
+    url = f"{RF_SERVER}/{RF_MODEL_ID}?api_key={RF_API_KEY}&confidence=0.05"
+    try:
+        resp = requests.post(url, data=img_b64, headers={"Content-Type": "application/x-www-form-urlencoded"}, timeout=30)
+        if resp.status_code == 402:
+            raise RuntimeError("402")
+        if resp.status_code == 429:
+            raise RuntimeError("429")
+        resp.raise_for_status()
+        raw = resp.json()
+    except RuntimeError:
+        raise
+    except Exception as e:
+        raise
+
+    predictions = [
+        p for p in raw.get("predictions", [])
+        if p.get("confidence", 0) >= _effective_conf(p.get("class", ""), multiplier)
+    ]
+
+    annotated_b64 = _draw_boxes(img_bytes, predictions)
+
+    if not predictions:
+        return {
+            "hasar_var":     False,
+            "hasar":         "Hasar tespit edilmedi",
+            "skor":          "—",
+            "tespit_sayisi": 0,
+            "detections":    [],
+            "annotated_img": annotated_b64,
+        }
+
+    detections = [
+        {
+            "class":      p["class"],
+            "confidence": round(p["confidence"], 4),
+            "bbox": [
+                round(p["x"] - p["width"]  / 2, 1),
+                round(p["y"] - p["height"] / 2, 1),
+                round(p["x"] + p["width"]  / 2, 1),
+                round(p["y"] + p["height"] / 2, 1),
+            ],
+        }
+        for p in predictions
+    ]
+
+    best = max(detections, key=lambda d: d["confidence"])
+    class_name = best["class"]
+    if class_name.isdigit():
+        class_name = "Damage"
+
+    return {
+        "hasar_var":     True,
+        "hasar":         class_name.capitalize(),
+        "skor":          f"{int(best['confidence'] * 100)}%",
+        "tespit_sayisi": len(detections),
+        "detections":    detections,
+        "annotated_img": annotated_b64,
+    }
+
+
 class AnalysisService:
     @staticmethod
     def predict_batch(image_bytes_list: List[bytes]) -> List[dict]:
-        if not _api_ready or _client is None:
+        if not _api_ready:
             raise RuntimeError("Inference client hazır değil.")
-        return [AnalysisService._predict_single(b) for b in image_bytes_list]
-
-    @staticmethod
-    def _predict_single(img_bytes: bytes) -> dict:
-        img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-
-        try:
-            raw = _client.infer(img, model_id=RF_MODEL_ID)
-        except Exception as e:
-            msg = str(e)
-            if "402" in msg:
-                raise RuntimeError("402")
-            if "429" in msg:
-                raise RuntimeError("429")
-            raise
-
-        predictions = [
-            p for p in raw.get("predictions", [])
-            if p.get("confidence", 0) >= RF_CONF
-        ]
-
-        annotated_b64 = _draw_boxes(img_bytes, predictions)
-
-        if not predictions:
-            return {
-                "hasar_var":     False,
-                "hasar":         "Hasar tespit edilmedi",
-                "skor":          "—",
-                "tespit_sayisi": 0,
-                "detections":    [],
-                "annotated_img": annotated_b64,
-            }
-
-        detections = [
-            {
-                "class":      p["class"],
-                "confidence": round(p["confidence"], 4),
-                "bbox": [
-                    round(p["x"] - p["width"] / 2, 1),
-                    round(p["y"] - p["height"] / 2, 1),
-                    round(p["x"] + p["width"] / 2, 1),
-                    round(p["y"] + p["height"] / 2, 1),
-                ],
-            }
-            for p in predictions
-        ]
-
-        best = max(detections, key=lambda d: d["confidence"])
-        class_name = best["class"]
-        if class_name.isdigit():
-            class_name = "Damage"
-
-        return {
-            "hasar_var":     True,
-            "hasar":         class_name.capitalize(),
-            "skor":          f"{int(best['confidence'] * 100)}%",
-            "tespit_sayisi": len(detections),
-            "detections":    detections,
-            "annotated_img": annotated_b64,
-        }
+        return [_predict_single(b) for b in image_bytes_list]
