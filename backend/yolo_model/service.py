@@ -1,6 +1,7 @@
 import os
 import io
 import base64
+import pathlib
 from typing import List
 
 import cv2
@@ -9,7 +10,9 @@ import requests
 from PIL import Image, ImageDraw
 from dotenv import load_dotenv
 
-load_dotenv()
+# .env proje kökünde — backend/yolo_model/ içinden iki üst klasör
+_ENV_PATH = pathlib.Path(__file__).resolve().parent.parent.parent / ".env"
+load_dotenv(_ENV_PATH)
 
 RF_API_KEY  = os.getenv("RF_API_KEY", "")
 RF_MODEL_ID = os.getenv("RF_MODEL_ID", "")

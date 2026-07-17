@@ -1,0 +1,160 @@
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  gap: 16px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.031em;
+  color: var(--c-carbon);
+  margin-bottom: 4px;
+}
+
+.sub {
+  font-size: 14px;
+  color: var(--c-graphite);
+  letter-spacing: -0.023em;
+}
+
+/* Filters */
+.filtersCard {
+  background: var(--c-white);
+  border: 1px solid #d1e0ff;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--sh-md);
+}
+
+.filtersRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.filtersRow .field { min-width: 140px; }
+
+/* Table card */
+.tableCard {
+  background: var(--c-white);
+  border: 1px solid #d1e0ff;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: var(--sh-md);
+}
+
+.tableScroll { overflow-x: auto; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead tr {
+  border-bottom: 1px solid var(--c-fog);
+}
+
+.table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.027em;
+  color: var(--c-ash);
+  white-space: nowrap;
+  background: var(--c-linen);
+}
+
+.table tbody tr {
+  border-bottom: 1px solid var(--c-fog);
+  transition: background .1s;
+}
+.table tbody tr:last-child { border-bottom: none; }
+.table tbody tr:hover { background: var(--c-linen); }
+
+.table td {
+  padding: 12px 16px;
+  font-size: 14px;
+  letter-spacing: -0.023em;
+  color: var(--c-graphite);
+  white-space: nowrap;
+}
+
+.containerNo {
+  font-weight: 700 !important;
+  color: var(--c-carbon) !important;
+  font-family: 'Courier New', monospace !important;
+  font-size: 13px !important;
+  letter-spacing: 0.02em !important;
+}
+
+.typeBadge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--c-mist);
+  color: var(--c-graphite);
+  letter-spacing: -0.027em;
+  white-space: nowrap;
+}
+
+.registeredBy {
+  font-size: 13px !important;
+  color: var(--c-carbon) !important;
+  font-weight: 500 !important;
+}
+
+.date {
+  font-size: 12px !important;
+  color: var(--c-ash) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableFooter {
+  padding: 12px 20px;
+  font-size: 13px;
+  color: var(--c-ash);
+  letter-spacing: -0.025em;
+  border-top: 1px solid var(--c-fog);
+}
+
+.adminNote { color: var(--c-lavender); font-weight: 500; }
+
+/* States */
+.stateRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px;
+  color: var(--c-ash);
+  font-size: 14px;
+  letter-spacing: -0.023em;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 64px 32px;
+  color: var(--c-ash);
+  font-size: 14px;
+  letter-spacing: -0.023em;
+  text-align: center;
+}
+.emptyState svg { opacity: .3; }
+
+@media (max-width: 640px) {
+  .filtersRow { flex-direction: column; }
+  .filtersRow .field { min-width: 100%; }
+}

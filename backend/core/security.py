@@ -1,9 +1,11 @@
 import os
+import pathlib
 from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
-load_dotenv()
+_ENV_PATH = pathlib.Path(__file__).resolve().parent.parent.parent / ".env"
+load_dotenv(_ENV_PATH)
 
 SECRET_KEY = os.getenv("SECRET_KEY", "port-konteyner-gizli-anahtar-2024")
 ALGORITHM = "HS256"

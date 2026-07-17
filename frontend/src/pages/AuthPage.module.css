@@ -1,0 +1,84 @@
+.wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #eff6ff 0%, #e0eaff 40%, #f0f4ff 100%);
+  padding: 24px;
+}
+
+.card {
+  background: var(--c-white);
+  border: 1px solid #c7d9ff;
+  border-radius: 24px;
+  padding: 40px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 4px 24px rgba(37,99,235,.10), var(--sh-lg);
+  border-top: 3px solid var(--c-lavender);
+}
+
+.brand {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.brandIcon {
+  width: 56px;
+  height: 56px;
+  background: var(--c-lavender);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  color: var(--c-white);
+}
+
+.brandName {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.031em;
+  color: var(--c-carbon);
+  margin-bottom: 4px;
+}
+
+.brandSub {
+  font-size: 14px;
+  color: var(--c-ash);
+  letter-spacing: -0.023em;
+}
+
+.tabs {
+  display: flex;
+  background: #e8effe;
+  border-radius: 9999px;
+  padding: 4px;
+  margin-bottom: 28px;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.023em;
+  color: var(--c-ash);
+  transition: all .15s ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.tab.active {
+  background: var(--c-white);
+  color: var(--c-carbon);
+  box-shadow: var(--sh-sm);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

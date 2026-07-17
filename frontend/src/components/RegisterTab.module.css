@@ -1,0 +1,89 @@
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  gap: 16px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.031em;
+  color: var(--c-carbon);
+  margin-bottom: 4px;
+}
+
+.sub {
+  font-size: 14px;
+  color: var(--c-graphite);
+  letter-spacing: -0.023em;
+}
+
+.card {
+  background: var(--c-white);
+  border: 1px solid #d1e0ff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(37,99,235,.07), var(--sh-md);
+  max-width: 680px;
+  margin-bottom: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.infoBox {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #eef4ff;
+  border: 1px solid #c3d9ff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  max-width: 680px;
+}
+
+.infoIcon {
+  color: var(--c-sky);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.infoTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-sky);
+  letter-spacing: -0.025em;
+  margin-bottom: 2px;
+}
+
+.infoText {
+  font-size: 13px;
+  color: #3a6bc4;
+  letter-spacing: -0.025em;
+}
+
+.infoText code {
+  background: rgba(44,120,252,.1);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0;
+}
+
+@media (max-width: 640px) {
+  .grid { grid-template-columns: 1fr; }
+  .card { padding: 20px; }
+}
