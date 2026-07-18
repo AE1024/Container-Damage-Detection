@@ -1,4 +1,5 @@
 from pydantic import BaseModel, field_validator
+from typing import Optional
 
 class RegisterRequest(BaseModel):
     first_name: str
@@ -11,7 +12,8 @@ class RegisterRequest(BaseModel):
     def check_password(cls, v: str) -> str:
         if len(v) < 6:
             raise ValueError("Şifre en az 6 karakter olmalıdır.")
-        return v
+        return v  
+    
 
     @field_validator("first_name", "last_name", "company")
     @classmethod
@@ -38,3 +40,23 @@ class TokenResponse(BaseModel):
     full_name:    str
     role:         str
     company:      str
+
+
+
+class UpdateProfileRequest(BaseModel):
+    first_name : Optional[str] = None 
+    last_name : Optional[str] = None
+    company : Optional[str] = None
+    password : Optional[str] = None
+
+    @field_validator("first_name", "last_name")
+    @classmethod
+    def not_empty(cls, v: str) -> str:
+        return v.strip()
+    
+    @field_validator("password")
+    @classmethod
+    def check_password(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and len(v) < 6:
+            raise ValueError("Şifre en az 6 karakter olmalıdır.")
+        return v

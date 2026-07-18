@@ -19,10 +19,11 @@ async function request(method, path, body, isForm = false) {
 
 export const api = {
   /* AUTH */
-  login:    (body) => request('POST', '/auth/login',    body),
-  register: (body) => request('POST', '/auth/register', body),
-  logout:   ()     => request('POST', '/auth/logout'),
-  me:       ()     => request('GET',  '/auth/me'),
+  login:         (body) => request('POST', '/auth/login',       body),
+  register:      (body) => request('POST', '/auth/register',    body),
+  logout:        ()     => request('POST', '/auth/logout'),
+  me:            ()     => request('GET',  '/auth/me'),
+  updateProfile: (body) => request('PUT',  '/auth/me/profile',  body),
 
   /* CONTAINERS */
   analyze:          (form)   => request('POST',   '/containers/analyze',  form, true),

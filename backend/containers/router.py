@@ -52,7 +52,11 @@ def register_container(
     current_user: dict = Depends(get_current_user),
 ):
     try:
-        record = save_container(container, registered_by=current_user["full_name"])
+        record = save_container(
+            container,
+            registered_by=current_user["full_name"],
+            registered_by_id=current_user["sub"],
+        )
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
     return {"status": "success", "data": record}
@@ -65,9 +69,9 @@ def list_containers(
     date_to:   Optional[str] = Query(None, description="YYYY-MM-DD"),
     limit:     int           = Query(10, ge=1, le=100),
 ):
-    owner = None if current_user.get("role") == "admin" else current_user["full_name"]
+    owner_id = None if current_user.get("role") == "admin" else current_user["sub"]
     containers = get_all_containers(
-        registered_by=owner,
+        registered_by_id=owner_id,
         date_from=date_from,
         date_to=date_to,
         limit=limit,
@@ -80,8 +84,8 @@ def remove_container(
     container_no: str,
     current_user: dict = Depends(get_current_user),
 ):
-    owner = None if current_user.get("role") == "admin" else current_user["full_name"]
-    deleted = delete_container(container_no.upper(), registered_by=owner)
+    owner_id = None if current_user.get("role") == "admin" else current_user["sub"]
+    deleted = delete_container(container_no.upper(), registered_by_id=owner_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Konteyner bulunamadı veya size ait değil.")
     return {"status": "deleted", "container_no": container_no.upper()}

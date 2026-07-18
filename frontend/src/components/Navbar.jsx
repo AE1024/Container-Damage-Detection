@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useAuth, useToast } from '../App'
 import { api } from '../api'
+import ProfileModal from './ProfileModal'
 import styles from './Navbar.module.css'
 
 const TABS = [
@@ -11,6 +13,7 @@ const TABS = [
 export default function Navbar({ activeTab, onTabChange }) {
   const { user, logout } = useAuth()
   const { showToast }    = useToast()
+  const [showProfile, setShowProfile] = useState(false)
 
   async function handleLogout() {
     try { await api.logout() } catch { /* token expired is fine */ }
@@ -51,7 +54,14 @@ export default function Navbar({ activeTab, onTabChange }) {
 
       {/* User */}
       <div className={styles.user}>
-        <div className={styles.avatar}>{initials}</div>
+        <button
+          className={styles.avatar}
+          onClick={() => setShowProfile(true)}
+          title="Profil ayarları"
+          style={{ cursor: 'pointer', border: 'none' }}
+        >
+          {initials}
+        </button>
         <div className={styles.userInfo}>
           <span className={styles.userName}>{user?.full_name}</span>
           <span className={styles.userCompany}>{user?.company}</span>
@@ -61,6 +71,8 @@ export default function Navbar({ activeTab, onTabChange }) {
         </span>
         <button className="btn btn-ghost sm" onClick={handleLogout}>Çıkış</button>
       </div>
+
+      {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
     </nav>
   )
 }

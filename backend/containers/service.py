@@ -4,11 +4,12 @@ from containers.schema import ContainerData
 from core.database import containers_col
 
 
-def save_container(container: ContainerData, registered_by: str) -> dict:
+def save_container(container: ContainerData, registered_by: str, registered_by_id: str) -> dict:
     record = container.model_dump()
-    record["container_id"]  = str(uuid.uuid4())
-    record["registered_by"] = registered_by
-    record["created_at"]    = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    record["container_id"]    = str(uuid.uuid4())
+    record["registered_by"]   = registered_by
+    record["registered_by_id"] = registered_by_id
+    record["created_at"]      = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     try:
         containers_col.insert_one(record)
     except Exception:
@@ -18,18 +19,18 @@ def save_container(container: ContainerData, registered_by: str) -> dict:
 
 
 def get_all_containers(
-    registered_by: str | None = None,
+    registered_by_id: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
     limit: int = 10,
 ) -> list[dict]:
     query: dict = {}
-    if registered_by is not None:
-        query["registered_by"] = registered_by
+    if registered_by_id is not None:
+        query["registered_by_id"] = registered_by_id
 
     date_filter: dict = {}
     if date_from:
-        date_filter["$gte"] = date_from          # ISO string karşılaştırması çalışır
+        date_filter["$gte"] = date_from
     if date_to:
         date_filter["$lte"] = date_to
     if date_filter:
@@ -39,9 +40,9 @@ def get_all_containers(
     return list(cursor)
 
 
-def delete_container(container_no: str, registered_by: str | None = None) -> bool:
+def delete_container(container_no: str, registered_by_id: str | None = None) -> bool:
     query = {"container_no": container_no}
-    if registered_by is not None:
-        query["registered_by"] = registered_by
+    if registered_by_id is not None:
+        query["registered_by_id"] = registered_by_id
     result = containers_col.delete_one(query)
     return result.deleted_count == 1

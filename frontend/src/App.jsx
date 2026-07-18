@@ -1,4 +1,4 @@
-import { useState, createContext, useContext } from 'react'
+import { useState, useEffect, createContext, useContext } from 'react'
 import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
 import Toast from './components/Toast'
@@ -10,11 +10,29 @@ export function useAuth() { return useContext(AuthContext) }
 export function useToast() { return useContext(ToastContext) }
 
 export default function App() {
-  const [token, setToken]   = useState(() => localStorage.getItem('cg_token'))
-  const [user,  setUser]    = useState(() => {
+  const [token,    setToken]   = useState(() => localStorage.getItem('cg_token'))
+  const [user,     setUser]    = useState(() => {
     try { return JSON.parse(localStorage.getItem('cg_user')) } catch { return null }
   })
-  const [toast, setToast]   = useState(null)
+  const [toast,    setToast]   = useState(null)
+  const [checking, setChecking] = useState(() => !!localStorage.getItem('cg_token'))
+
+  useEffect(() => {
+    if (!token) return
+    fetch('/api/v1/auth/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('invalid')
+      })
+      .catch(() => {
+        localStorage.removeItem('cg_token')
+        localStorage.removeItem('cg_user')
+        setToken(null)
+        setUser(null)
+      })
+      .finally(() => setChecking(false))
+  }, [])
 
   const login = (tok, userData) => {
     localStorage.setItem('cg_token', tok)
@@ -34,6 +52,8 @@ export default function App() {
     setToast({ message, type })
     setTimeout(() => setToast(null), 3500)
   }
+
+  if (checking) return null
 
   return (
     <AuthContext.Provider value={{ token, user, setUser, login, logout }}>

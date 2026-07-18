@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from auth.schema import LoginRequest, RegisterRequest, TokenResponse
-from auth.service import authenticate_user, register_user, user_exists
+from auth.schema import LoginRequest, RegisterRequest, TokenResponse , UpdateProfileRequest
+from auth.service import authenticate_user, register_user, user_exists , update_profile
 from core.security import create_access_token
 from core.dependencies import get_current_user
 from core.database import revoked_tokens_col
@@ -10,7 +10,6 @@ from core.database import revoked_tokens_col
 bearer = HTTPBearer()
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
-
 
 @router.post("/register", status_code=201)
 def register(body: RegisterRequest):
@@ -39,10 +38,10 @@ def login(body: LoginRequest):
         )
     full_name = f"{user['first_name'].capitalize()} {user['last_name'].capitalize()}"
     token = create_access_token({
-        "sub":       str(user["_id"]),
+        "sub":  str(user["_id"]),
         "full_name": full_name,
-        "role":      user["role"],
-        "company":   user["company"],
+        "role":  user["role"],
+        "company": user["company"],
     })
     return TokenResponse(
         access_token=token,
@@ -56,8 +55,8 @@ def login(body: LoginRequest):
 def me(current_user: dict = Depends(get_current_user)):
     return {
         "full_name": current_user["full_name"],
-        "role":      current_user["role"],
-        "company":   current_user["company"],
+        "role":current_user["role"],
+        "company": current_user["company"],
     }
 
 
@@ -67,7 +66,24 @@ def logout(
     current_user: dict = Depends(get_current_user),
 ):
     revoked_tokens_col.insert_one({
-        "token":      credentials.credentials,
+        "token":  credentials.credentials,
         "revoked_at": datetime.now(timezone.utc),
     })
     return {"message": "Oturum sonlandırıldı.", "user": current_user["full_name"]}
+
+
+@router.put("/me/profile", status_code=200)
+def update_me(
+    body: UpdateProfileRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    result = update_profile(
+        user_id=current_user["sub"],
+        first_name=body.first_name,
+        last_name=body.last_name,
+        company=body.company,
+        password=body.password,
+    )
+    if result["status"] == "error":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["message"])
+    return result
