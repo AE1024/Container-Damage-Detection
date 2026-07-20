@@ -4,11 +4,12 @@ from yolo_model.service import AnalysisService
 from containers.schema import ContainerData
 from containers.service import save_container, get_all_containers, delete_container
 from core.dependencies import get_current_user
+import asyncio
 
 router = APIRouter(prefix="/containers", tags=["Containers"])
 
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/jpg", "image/webp"}
-MAX_FILES     = 3
+MAX_FILES  = 6
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
 
 
@@ -19,8 +20,6 @@ async def analyze_image(
 ):
     if len(files) > MAX_FILES:
         raise HTTPException(status_code=400, detail=f"En fazla {MAX_FILES} resim yüklenebilir.")
-
-    import asyncio
 
     image_bytes_list = []
     for f in files:
@@ -66,8 +65,11 @@ def register_container(
 def list_containers(
     current_user: dict = Depends(get_current_user),
     date_from: Optional[str] = Query(None, description="YYYY-MM-DD"),
-    date_to:   Optional[str] = Query(None, description="YYYY-MM-DD"),
-    limit:     int           = Query(10, ge=1, le=100),
+    date_to: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    limit: int = Query(10, ge=1, le=100),
+    container_no: Optional[str] = Query(None, description="Konteyner numarası (kısmi arama)"),
+    container_type: Optional[str] = Query(None, description="Konteyner tipi (tam eşleşme)"),
+    company_name: Optional[str] = Query(None, description="Şirket adı (kısmi arama)"),
 ):
     owner_id = None if current_user.get("role") == "admin" else current_user["sub"]
     containers = get_all_containers(
@@ -75,6 +77,9 @@ def list_containers(
         date_from=date_from,
         date_to=date_to,
         limit=limit,
+        container_no=container_no,
+        container_type=container_type,
+        company_name=company_name,
     )
     return {"total": len(containers), "containers": containers}
 

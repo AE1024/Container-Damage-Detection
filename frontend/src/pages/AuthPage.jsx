@@ -22,12 +22,12 @@ export default function AuthPage() {
       const data = await api.login({
         first_name: fd.get('first_name').trim(),
         last_name:  fd.get('last_name').trim(),
-        password:   fd.get('password'),
+        password: fd.get('password'),
       })
       login(data.access_token, {
         full_name: data.full_name,
-        role:      data.role,
-        company:   data.company,
+        role: data.role,
+        company: data.company,
       })
       showToast(`Hoş geldiniz, ${data.full_name}!`, 'success')
     } catch (err) {
@@ -47,8 +47,8 @@ export default function AuthPage() {
       const data = await api.register({
         first_name: fd.get('first_name').trim(),
         last_name:  fd.get('last_name').trim(),
-        company:    fd.get('company').trim(),
-        password:   fd.get('password'),
+        company:  fd.get('company').trim(),
+        password: fd.get('password'),
       })
       setRegOk(data.message || 'Kayıt başarılı! Giriş yapabilirsiniz.')
       e.target.reset()

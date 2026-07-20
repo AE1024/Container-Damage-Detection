@@ -18,18 +18,17 @@ RF_API_KEY  = os.getenv("RF_API_KEY", "")
 RF_MODEL_ID = os.getenv("RF_MODEL_ID", "")
 RF_SERVER   = os.getenv("RF_SERVER", "https://detect.roboflow.com")
 
-# Sınıf bazlı confidence eşikleri — .env ile override edilebilir
 CLASS_CONF: dict[str, float] = {
-    "dent": float(os.getenv("RF_CONF_DENT", "0.18")),
-    "rust": float(os.getenv("RF_CONF_RUST", "0.22")),
-    "hole": float(os.getenv("RF_CONF_HOLE", "0.28")),
+    "dent": float(os.getenv("RF_CONF_DENT", "0.30")),
+    "rust": float(os.getenv("RF_CONF_RUST", "0.35")),
+    "hole": float(os.getenv("RF_CONF_HOLE", "0.40")),
 }
-DEFAULT_CONF = float(os.getenv("RF_CONF", "0.25"))  # tanımsız sınıflar için
+DEFAULT_CONF = float(os.getenv("RF_CONF", "0.35"))  # tanımsız sınıflar için
 
 _BLUR_LEVELS = [
-    (80,  0.55),   # çok bulanık  → eşikleri %45 düşür
-    (200, 0.75),   # orta bulanık → eşikleri %25 düşür
-    (400, 0.90),   # hafif bulanık → eşikleri %10 düşür
+    (80,  0.55),  
+    (200, 0.75),   
+    (400, 0.90),   
 ]
 
 _api_ready: bool = False
@@ -106,9 +105,9 @@ def _predict_single(img_bytes: bytes) -> dict:
 
     if not predictions:
         return {
-            "hasar_var":     False,
-            "hasar":         "Hasar tespit edilmedi",
-            "skor":          "—",
+            "hasar_var":  False,
+            "hasar":  "Hasar tespit edilmedi",
+            "skor": "—",
             "tespit_sayisi": 0,
             "detections":    [],
             "annotated_img": annotated_b64,
@@ -116,7 +115,7 @@ def _predict_single(img_bytes: bytes) -> dict:
 
     detections = [
         {
-            "class":      p["class"],
+            "class":  p["class"],
             "confidence": round(p["confidence"], 4),
             "bbox": [
                 round(p["x"] - p["width"]  / 2, 1),
@@ -134,11 +133,11 @@ def _predict_single(img_bytes: bytes) -> dict:
         class_name = "Damage"
 
     return {
-        "hasar_var":     True,
-        "hasar":         class_name.capitalize(),
-        "skor":          f"{int(best['confidence'] * 100)}%",
+        "hasar_var":   True,
+        "hasar":   class_name.capitalize(),
+        "skor":   f"{int(best['confidence'] * 100)}%",
         "tespit_sayisi": len(detections),
-        "detections":    detections,
+        "detections":   detections,
         "annotated_img": annotated_b64,
     }
 

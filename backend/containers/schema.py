@@ -12,10 +12,10 @@ CONTAINER_TYPES = [
 
 
 class ContainerData(BaseModel):
-    container_no:     str = Field(description="4 harf + 7 rakam (örn: MSCU1234567)")
-    container_type:   str = Field(description="Konteyner tipi")
-    company_name:     str = Field(description="Şirket adı")
-    arrive_port:      str = Field(description="Geliş limanı")
+    container_no: str = Field(description="4 harf + 7 rakam (örn: MSCU1234567)")
+    container_type: str = Field(description="Konteyner tipi")
+    company_name: str = Field(description="Şirket adı")
+    arrive_port: str = Field(description="Geliş limanı")
     destination_port: str = Field(description="Varış limanı")
 
     @field_validator("container_no")

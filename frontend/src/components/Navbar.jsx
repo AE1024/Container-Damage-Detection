@@ -5,9 +5,9 @@ import ProfileModal from './ProfileModal'
 import styles from './Navbar.module.css'
 
 const TABS = [
-  { key: 'analyze',            label: 'Hasar Analizi',      Icon: IconAnalyze },
+  { key: 'analyze',    label: 'Hasar Analizi',      Icon: IconAnalyze },
   { key: 'register-container', label: 'Konteyner Kayıt',    Icon: IconPlus },
-  { key: 'list',               label: 'Konteyner Listesi',  Icon: IconList },
+  { key: 'list',   label: 'Konteyner Listesi',  Icon: IconList },
 ]
 
 export default function Navbar({ activeTab, onTabChange }) {

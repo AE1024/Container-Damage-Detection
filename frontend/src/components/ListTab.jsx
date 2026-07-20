@@ -3,16 +3,32 @@ import { api } from '../api'
 import { useAuth, useToast } from '../App'
 import styles from './ListTab.module.css'
 
+const CONTAINER_TYPES = ['Kuru Yük', 'Soğutmalı', 'Açık Üst', 'Platform', 'Tank', 'Özel Amaçlı']
+
 export default function ListTab() {
-  const [containers, setContainers] = useState([])
-  const [total,      setTotal]      = useState(0)
-  const [loading,    setLoading]    = useState(false)
-  const [dateFrom,   setDateFrom]   = useState('')
-  const [dateTo,     setDateTo]     = useState('')
-  const [limit,      setLimit]      = useState('10')
+  const [containers,     setContainers]     = useState([])
+  const [total,          setTotal]          = useState(0)
+  const [loading,        setLoading]        = useState(false)
+  const [dateFrom,       setDateFrom]       = useState('')
+  const [dateTo,         setDateTo]         = useState('')
+  const [limit,          setLimit]          = useState('10')
+  const [containerNo,    setContainerNo]    = useState('')
+  const [containerType,  setContainerType]  = useState('')
+  const [companyName,    setCompanyName]    = useState('')
 
   const { user }      = useAuth()
   const { showToast } = useToast()
+
+  function buildParams() {
+    return {
+      date_from:      dateFrom      || undefined,
+      date_to:        dateTo        || undefined,
+      limit,
+      container_no:   containerNo   || undefined,
+      container_type: containerType || undefined,
+      company_name:   companyName   || undefined,
+    }
+  }
 
   async function fetchList(params) {
     setLoading(true)
@@ -31,7 +47,16 @@ export default function ListTab() {
 
   function handleFilter(e) {
     e.preventDefault()
-    fetchList({ date_from: dateFrom || undefined, date_to: dateTo || undefined, limit })
+    fetchList(buildParams())
+  }
+
+  function handleClear() {
+    setDateFrom('')
+    setDateTo('')
+    setContainerNo('')
+    setContainerType('')
+    setCompanyName('')
+    fetchList({ limit })
   }
 
   async function handleDelete(containerNo) {
@@ -46,6 +71,8 @@ export default function ListTab() {
     }
   }
 
+  const hasActiveFilters = dateFrom || dateTo || containerNo || containerType || companyName
+
   return (
     <div>
       {/* Header */}
@@ -56,7 +83,7 @@ export default function ListTab() {
         </div>
         <button
           className="btn btn-ghost sm"
-          onClick={() => fetchList({ date_from: dateFrom || undefined, date_to: dateTo || undefined, limit })}
+          onClick={() => fetchList(buildParams())}
         >
           <RefreshIcon /> Yenile
         </button>
@@ -65,6 +92,34 @@ export default function ListTab() {
       {/* Filters */}
       <form className={styles.filtersCard} onSubmit={handleFilter}>
         <div className={styles.filtersRow}>
+          <div className="field">
+            <label>Konteyner No</label>
+            <input
+              type="text"
+              placeholder="MSCU1234567"
+              value={containerNo}
+              onChange={e => setContainerNo(e.target.value.toUpperCase())}
+              style={{ textTransform: 'uppercase', fontFamily: 'monospace' }}
+            />
+          </div>
+          <div className="field">
+            <label>Yük Tipi</label>
+            <select value={containerType} onChange={e => setContainerType(e.target.value)}>
+              <option value="">Tümü</option>
+              {CONTAINER_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Şirket</label>
+            <input
+              type="text"
+              placeholder="Şirket adı..."
+              value={companyName}
+              onChange={e => setCompanyName(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className={styles.filtersRow} style={{ marginTop: 12 }}>
           <div className="field">
             <label>Başlangıç Tarihi</label>
             <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
@@ -82,15 +137,15 @@ export default function ListTab() {
               <option value="100">100 kayıt</option>
             </select>
           </div>
-          <button type="submit" className="btn btn-primary sm" style={{alignSelf:'flex-end'}}>
+          <button type="submit" className="btn btn-primary sm" style={{ alignSelf: 'flex-end' }}>
             Filtrele
           </button>
-          {(dateFrom || dateTo) && (
+          {hasActiveFilters && (
             <button
               type="button"
               className="btn btn-ghost sm"
-              style={{alignSelf:'flex-end'}}
-              onClick={() => { setDateFrom(''); setDateTo(''); fetchList({ limit }) }}
+              style={{ alignSelf: 'flex-end' }}
+              onClick={handleClear}
             >
               Temizle
             </button>

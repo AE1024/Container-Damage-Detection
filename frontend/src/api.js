@@ -30,9 +30,12 @@ export const api = {
   registerContainer:(body)   => request('POST',   '/containers/register', body),
   listContainers:   (params) => {
     const q = new URLSearchParams()
-    if (params?.date_from) q.set('date_from', params.date_from)
-    if (params?.date_to)   q.set('date_to',   params.date_to)
-    if (params?.limit)     q.set('limit',      params.limit)
+    if (params?.date_from)      q.set('date_from',      params.date_from)
+    if (params?.date_to)        q.set('date_to',        params.date_to)
+    if (params?.limit)          q.set('limit',          params.limit)
+    if (params?.container_no)   q.set('container_no',   params.container_no)
+    if (params?.container_type) q.set('container_type', params.container_type)
+    if (params?.company_name)   q.set('company_name',   params.company_name)
     return request('GET', `/containers/list?${q}`)
   },
   deleteContainer: (no) => request('DELETE', `/containers/${no}`),

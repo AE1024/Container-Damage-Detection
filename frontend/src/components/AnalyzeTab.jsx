@@ -3,7 +3,7 @@ import { api } from '../api'
 import { useToast } from '../App'
 import styles from './AnalyzeTab.module.css'
 
-const MAX_FILES = 3
+const MAX_FILES = 6
 const ACCEPT    = ['image/jpeg', 'image/png', 'image/webp']
 
 export default function AnalyzeTab() {
@@ -89,7 +89,7 @@ export default function AnalyzeTab() {
               </svg>
             </div>
             <p className={styles.uploadTitle}>Görüntü sürükleyin veya seçin</p>
-            <p className={styles.uploadMeta}>JPG, PNG, WebP · En fazla {MAX_FILES} dosya · 20 MB/dosya</p>
+            <p className={styles.uploadMeta}>JPG, PNG, WebP · En fazla {MAX_FILES} dosya</p>
             <button
               className="btn btn-primary"
               onClick={e => { e.stopPropagation(); inputRef.current?.click() }}

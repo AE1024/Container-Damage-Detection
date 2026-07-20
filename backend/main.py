@@ -23,7 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router,       prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
 app.include_router(containers_router, prefix="/api/v1")
 
 
@@ -42,13 +42,13 @@ def health_check():
         db_status = "error"
         db_msg    = str(e)
 
-    model_ok     = is_model_loaded()
+    model_ok  = is_model_loaded()
     model_status = "ok" if model_ok else "error"
-    model_msg    = "Model yüklü" if model_ok else "Model henüz yüklenmedi"
+    model_msg = "Model yüklü" if model_ok else "Model henüz yüklenmedi"
 
     overall = "ok" if db_status == "ok" and model_status == "ok" else "degraded"
     return {
-        "status":   overall,
+        "status": overall,
         "database": {"status": db_status, "message": db_msg},
-        "model":    {"status": model_status, "message": model_msg},
+        "model":  {"status": model_status, "message": model_msg},
     }
