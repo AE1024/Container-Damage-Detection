@@ -10,7 +10,7 @@ router = APIRouter(prefix="/containers", tags=["Containers"])
 
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/jpg", "image/webp"}
 MAX_FILES  = 6
-MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
+MAX_FILE_SIZE = 20 * 1024 * 1024 
 
 
 @router.post("/analyze")

@@ -5,7 +5,7 @@ import styles from './ListTab.module.css'
 
 const CONTAINER_TYPES = ['Kuru Yük', 'Soğutmalı', 'Açık Üst', 'Platform', 'Tank', 'Özel Amaçlı']
 
-export default function ListTab() {
+export default function ListTab({ isActive }) {
   const [containers,     setContainers]     = useState([])
   const [total,          setTotal]          = useState(0)
   const [loading,        setLoading]        = useState(false)
@@ -43,7 +43,7 @@ export default function ListTab() {
     }
   }
 
-  useEffect(() => { fetchList({ limit }) }, [])
+  useEffect(() => { if (isActive) fetchList({ limit }) }, [isActive])
 
   function handleFilter(e) {
     e.preventDefault()

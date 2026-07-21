@@ -20,7 +20,7 @@ RF_SERVER   = os.getenv("RF_SERVER", "https://detect.roboflow.com")
 
 CLASS_CONF: dict[str, float] = {
     "dent": float(os.getenv("RF_CONF_DENT", "0.30")),
-    "rust": float(os.getenv("RF_CONF_RUST", "0.35")),
+    "rust": float(os.getenv("RF_CONF_RUST", "0.20")),
     "hole": float(os.getenv("RF_CONF_HOLE", "0.40")),
 }
 DEFAULT_CONF = float(os.getenv("RF_CONF", "0.35"))  # tanımsız sınıflar için

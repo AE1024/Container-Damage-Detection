@@ -23,7 +23,7 @@ export default function DashboardPage() {
           const Panel = PANELS[tab]
           return (
             <div key={tab} style={{ display: activeTab === tab ? 'block' : 'none' }}>
-              <Panel />
+              <Panel isActive={activeTab === tab} />
             </div>
           )
         })}
