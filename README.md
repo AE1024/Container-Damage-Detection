@@ -1,3 +1,4 @@
+[🇬🇧 English version](README_EN.md)
 # ContainerGuard — Port Konteyner Takip Sistemi
 
 **YZ destekli konteyner hasar tespiti ve liman operasyonları yönetim platformu**
