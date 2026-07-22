@@ -1,3 +1,18 @@
+.autofillBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #eef4ff 0%, #f5f0ff 100%);
+  border: 1px solid #c7d9ff;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-lavender);
+  letter-spacing: -0.02em;
+}
+
 .header {
   display: flex;
   align-items: flex-start;

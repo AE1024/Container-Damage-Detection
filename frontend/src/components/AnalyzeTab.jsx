@@ -6,7 +6,7 @@ import styles from './AnalyzeTab.module.css'
 const MAX_FILES = 6
 const ACCEPT    = ['image/jpeg', 'image/png', 'image/webp']
 
-export default function AnalyzeTab() {
+export default function AnalyzeTab({ onSendToRegister }) {
   const [files,    setFiles]    = useState([])
   const [previews, setPreviews] = useState([])
   const [results,  setResults]  = useState(null)
@@ -154,7 +154,7 @@ export default function AnalyzeTab() {
           </div>
           <div className={styles.resultsGrid}>
             {results.map((r, i) => (
-              <ResultCard key={i} result={r} index={i} />
+              <ResultCard key={i} result={r} index={i} onSendToRegister={onSendToRegister} />
             ))}
           </div>
         </div>
@@ -163,8 +163,8 @@ export default function AnalyzeTab() {
   )
 }
 
-function ResultCard({ result, index }) {
-  const { hasar_var, hasar, skor, tespit_sayisi, detections, annotated_img } = result
+function ResultCard({ result, index, onSendToRegister }) {
+  const { hasar_var, hasar, skor, tespit_sayisi, detections, annotated_img, container_no, company_name } = result
 
   return (
     <div className={styles.resultCard}>
@@ -216,8 +216,40 @@ function ResultCard({ result, index }) {
             )}
           </>
         )}
+
+        {/* Konteyner No / Şirket — her zaman gösterilir */}
+        <div className={styles.containerInfoBox}>
+          <div className={styles.containerInfoRow}>
+            <span className={styles.containerInfoLabel}>Konteyner No</span>
+            <span className={container_no ? styles.containerInfoValue : styles.containerInfoEmpty}>
+              {container_no || '—'}
+            </span>
+          </div>
+          <div className={styles.containerInfoRow}>
+            <span className={styles.containerInfoLabel}>Şirket</span>
+            <span className={company_name ? styles.containerInfoValue : styles.containerInfoEmpty}>
+              {company_name || '—'}
+            </span>
+          </div>
+          {container_no && (
+            <button
+              className={styles.sendToRegisterBtn}
+              onClick={() => onSendToRegister?.(container_no, company_name)}
+            >
+              <RegisterIcon /> Konteyner Kayıt'a Gönder
+            </button>
+          )}
+        </div>
       </div>
     </div>
+  )
+}
+
+function RegisterIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" width={13} height={13}>
+      <path d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"/>
+    </svg>
   )
 }
 

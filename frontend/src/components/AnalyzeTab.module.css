@@ -252,6 +252,69 @@
 .detectionClass { font-weight: 500; color: var(--c-carbon); text-transform: capitalize; }
 .detectionConf  { font-weight: 600; color: var(--c-lavender); }
 
+/* Konteyner No / Şirket bilgi kutusu */
+.containerInfoBox {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #eef4ff 0%, #f5f0ff 100%);
+  border: 1px solid #c7d9ff;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.containerInfoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.containerInfoLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-ash);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.containerInfoValue {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-carbon);
+  letter-spacing: 0.01em;
+  font-family: 'Courier New', monospace;
+}
+
+.containerInfoEmpty {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-ash);
+  letter-spacing: 0.01em;
+}
+
+.sendToRegisterBtn {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  background: var(--c-lavender);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: opacity .15s;
+  align-self: flex-start;
+}
+.sendToRegisterBtn:hover { opacity: .85; }
+
 @media (max-width: 640px) {
   .previewGrid { grid-template-columns: 1fr 1fr; }
   .resultsGrid { grid-template-columns: 1fr; }

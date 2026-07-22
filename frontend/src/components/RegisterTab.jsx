@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { api } from '../api'
 import { useToast } from '../App'
 import styles from './RegisterTab.module.css'
@@ -7,10 +7,22 @@ const CONTAINER_TYPES = [
   'Kuru Yük', 'Soğutmalı', 'Açık Üst', 'Platform', 'Tank', 'Özel Amaçlı',
 ]
 
-export default function RegisterTab() {
-  const [msg,     setMsg]     = useState(null)
-  const [loading, setLoading] = useState(false)
-  const { showToast }         = useToast()
+export default function RegisterTab({ prefillContainerNo = '', prefillCompanyName = '', prefillKey = 0, onPrefillUsed }) {
+  const [msg,         setMsg]         = useState(null)
+  const [loading,     setLoading]     = useState(false)
+  const [containerNo, setContainerNo] = useState(prefillContainerNo)
+  const [companyName, setCompanyName] = useState(prefillCompanyName)
+  const { showToast }                 = useToast()
+
+  // prefillKey her değiştiğinde (yeni kart tıklandığında) her iki alanı güncelle.
+  // if kontrolü yok — boş string gelse de önceki değeri siler.
+  useEffect(() => {
+    if (prefillKey === 0) return
+    setContainerNo(prefillContainerNo)
+    setCompanyName(prefillCompanyName)
+  }, [prefillKey])
+
+  const isAutofilled = !!(prefillContainerNo || prefillCompanyName)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -18,9 +30,9 @@ export default function RegisterTab() {
     setLoading(true)
     const fd = new FormData(e.target)
     const body = {
-      container_no:     fd.get('container_no').toUpperCase().replace(/\s/g, ''),
+      container_no:     (fd.get('container_no') || '').toUpperCase().replace(/\s/g, ''),
       container_type:   fd.get('container_type'),
-      company_name:     fd.get('company_name').toUpperCase(),
+      company_name:     (fd.get('company_name') || '').toUpperCase(),
       arrive_port:      fd.get('arrive_port'),
       destination_port: fd.get('destination_port'),
     }
@@ -29,6 +41,9 @@ export default function RegisterTab() {
       setMsg({ type: 'success', text: `${body.container_no} başarıyla kayıt edildi.` })
       showToast('Konteyner kayıt edildi.', 'success')
       e.target.reset()
+      setContainerNo('')
+      setCompanyName('')
+      onPrefillUsed?.()
     } catch (err) {
       setMsg({ type: 'error', text: err.message })
     } finally {
@@ -47,6 +62,12 @@ export default function RegisterTab() {
 
       <div className={styles.card}>
         <form onSubmit={handleSubmit} onReset={() => setMsg(null)}>
+          {isAutofilled && (
+            <div className={styles.autofillBanner}>
+              <span>⚡ Hasar analizinden otomatik dolduruldu — geri kalan alanları tamamlayın.</span>
+            </div>
+          )}
+
           <div className={styles.grid}>
             <div className="field">
               <label>
@@ -59,7 +80,14 @@ export default function RegisterTab() {
                 placeholder="MSCU1234567"
                 maxLength={11}
                 required
-                style={{ textTransform: 'uppercase' }}
+                value={containerNo}
+                onChange={e => setContainerNo(e.target.value.toUpperCase().replace(/\s/g, ''))}
+                style={{
+                  textTransform: 'uppercase',
+                  fontFamily: 'monospace',
+                  borderColor: prefillContainerNo ? 'var(--c-lavender)' : undefined,
+                  boxShadow: prefillContainerNo ? '0 0 0 2px rgba(99,102,241,.15)' : undefined,
+                }}
               />
             </div>
 
@@ -80,7 +108,13 @@ export default function RegisterTab() {
                 type="text"
                 placeholder="MAERSK LINE"
                 required
-                style={{ textTransform: 'uppercase' }}
+                value={companyName}
+                onChange={e => setCompanyName(e.target.value.toUpperCase())}
+                style={{
+                  textTransform: 'uppercase',
+                  borderColor: prefillCompanyName ? 'var(--c-lavender)' : undefined,
+                  boxShadow: prefillCompanyName ? '0 0 0 2px rgba(99,102,241,.15)' : undefined,
+                }}
               />
             </div>
 
