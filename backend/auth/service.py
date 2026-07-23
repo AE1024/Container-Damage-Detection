@@ -30,12 +30,8 @@ def register_user(first_name: str, last_name: str, username: str, company: str, 
     return user
 
 
-def authenticate_user(username: str, first_name: str, last_name: str, password: str) -> dict | None:
-    user = users_col.find_one({
-        "username":   username.strip().lower(),
-        "first_name": first_name.strip().lower(),
-        "last_name":  last_name.strip().lower(),
-    })
+def authenticate_user(username: str, password: str) -> dict | None:
+    user = users_col.find_one({"username": username.strip().lower()})
     if user and _verify(password, user["password_hash"]):
         return user
     return None

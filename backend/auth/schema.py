@@ -35,17 +35,10 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    username:  str
-    first_name: str
-    last_name:  str
-    password:  str
-
-    @field_validator("first_name", "last_name")
-    @classmethod
-    def names_not_empty(cls, v: str) -> str:
-        if not v.strip():
-            raise ValueError("Bu alan boş bırakılamaz.")
-        return v.strip()
+    username:   str
+    password:   str
+    first_name: Optional[str] = None
+    last_name:  Optional[str] = None
 
     @field_validator("password")
     @classmethod

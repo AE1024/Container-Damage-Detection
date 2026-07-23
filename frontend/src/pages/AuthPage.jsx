@@ -133,12 +133,12 @@ export default function AuthPage() {
           <form className={styles.form} onSubmit={handleLogin}>
             <div className="field-row">
               <div className="field">
-                <label>Ad</label>
-                <input name="first_name" type="text" placeholder="Adınız" required />
+                <label>Ad <span className="hint">opsiyonel</span></label>
+                <input name="first_name" type="text" placeholder="Adınız" />
               </div>
               <div className="field">
-                <label>Soyad</label>
-                <input name="last_name" type="text" placeholder="Soyadınız" required />
+                <label>Soyad <span className="hint">opsiyonel</span></label>
+                <input name="last_name" type="text" placeholder="Soyadınız" />
               </div>
             </div>
             <div className="field">

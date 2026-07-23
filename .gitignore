@@ -4,6 +4,7 @@
 # Python önbellekleri
 __pycache__/
 *.py[cod]
+.pytest_cache/
 
 # Çevre değişkenleri
 .env

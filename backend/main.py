@@ -6,12 +6,13 @@ from auth.router import router as auth_router
 from containers.router import router as containers_router
 from yolo_model.service import load_model, is_model_loaded
 from ocr.service import preload_reader
-from core.database import client as mongo_client
+from core.database import client as mongo_client, init_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     loop = asyncio.get_running_loop()
+    init_db()
     await loop.run_in_executor(None, load_model)
     await loop.run_in_executor(None, preload_reader)
     yield

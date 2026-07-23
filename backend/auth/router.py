@@ -52,7 +52,7 @@ def register(body: RegisterRequest):
 
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest):
-    user = authenticate_user(body.username, body.first_name, body.last_name, body.password)
+    user = authenticate_user(body.username, body.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
