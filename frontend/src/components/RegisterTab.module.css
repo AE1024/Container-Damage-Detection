@@ -98,6 +98,27 @@
   letter-spacing: 0;
 }
 
+.bicHint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1a7a35;
+  margin-top: 4px;
+  letter-spacing: -0.02em;
+}
+
+.bicWarn {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #d97706;
+  margin-top: 4px;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
+}
+
 @media (max-width: 640px) {
   .grid { grid-template-columns: 1fr; }
   .card { padding: 20px; }

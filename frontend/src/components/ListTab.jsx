@@ -5,6 +5,17 @@ import styles from './ListTab.module.css'
 
 const CONTAINER_TYPES = ['Kuru Yük', 'Soğutmalı', 'Açık Üst', 'Platform', 'Tank', 'Özel Amaçlı']
 
+const COREX_PORTS = [
+  'Gebze Terminali', 'Körfez Terminali', 'Ankara Terminali',
+  'Marsaxlokk Terminali', 'Takoradi Terminali', 'Taranto Terminali',
+  'Oslo Terminali', 'Gävle Terminali', 'Stockholm Nord Terminali',
+  'Acajutla Terminali', 'La Unión Terminali', 'Paita Terminali',
+  'Puerto Bolívar Terminali', 'Puerto Quetzal Terminali', 'Liscont Terminali',
+  'Figueira Da Foz Terminali', 'Sotagus Terminali', 'Leixões Terminali',
+  'Aveiro Terminali', 'Setúbal Terminali', 'Tersado Terminali',
+  'Huelva Terminali', 'Ferrol Terminali', 'Elvas Terminali',
+]
+
 export default function ListTab({ isActive }) {
   const [containers,     setContainers]     = useState([])
   const [total,          setTotal]          = useState(0)
@@ -15,18 +26,22 @@ export default function ListTab({ isActive }) {
   const [containerNo,    setContainerNo]    = useState('')
   const [containerType,  setContainerType]  = useState('')
   const [companyName,    setCompanyName]    = useState('')
+  const [arrivePort,     setArrivePort]     = useState('')
+  const [destPort,       setDestPort]       = useState('')
 
   const { user }      = useAuth()
   const { showToast } = useToast()
 
   function buildParams() {
     return {
-      date_from:      dateFrom      || undefined,
-      date_to:        dateTo        || undefined,
+      date_from:        dateFrom       || undefined,
+      date_to:          dateTo         || undefined,
       limit,
-      container_no:   containerNo   || undefined,
-      container_type: containerType || undefined,
-      company_name:   companyName   || undefined,
+      container_no:     containerNo    || undefined,
+      container_type:   containerType  || undefined,
+      company_name:     companyName    || undefined,
+      arrive_port:      arrivePort     || undefined,
+      destination_port: destPort       || undefined,
     }
   }
 
@@ -56,6 +71,8 @@ export default function ListTab({ isActive }) {
     setContainerNo('')
     setContainerType('')
     setCompanyName('')
+    setArrivePort('')
+    setDestPort('')
     fetchList({ limit })
   }
 
@@ -71,7 +88,7 @@ export default function ListTab({ isActive }) {
     }
   }
 
-  const hasActiveFilters = dateFrom || dateTo || containerNo || containerType || companyName
+  const hasActiveFilters = dateFrom || dateTo || containerNo || containerType || companyName || arrivePort || destPort
 
   return (
     <div>
@@ -98,7 +115,7 @@ export default function ListTab({ isActive }) {
               type="text"
               placeholder="MSCU1234567"
               value={containerNo}
-              onChange={e => setContainerNo(e.target.value.toUpperCase())}
+              onChange={e => setContainerNo(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
               style={{ textTransform: 'uppercase', fontFamily: 'monospace' }}
             />
           </div>
@@ -117,6 +134,22 @@ export default function ListTab({ isActive }) {
               value={companyName}
               onChange={e => setCompanyName(e.target.value)}
             />
+          </div>
+        </div>
+        <div className={styles.filtersRow} style={{ marginTop: 12 }}>
+          <div className="field">
+            <label>Geliş Limanı</label>
+            <select value={arrivePort} onChange={e => setArrivePort(e.target.value)}>
+              <option value="">Tümü</option>
+              {COREX_PORTS.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Varış Limanı</label>
+            <select value={destPort} onChange={e => setDestPort(e.target.value)}>
+              <option value="">Tümü</option>
+              {COREX_PORTS.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
           </div>
         </div>
         <div className={styles.filtersRow} style={{ marginTop: 12 }}>

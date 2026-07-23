@@ -16,6 +16,7 @@ users_col  = db["users"]
 containers_col  = db["containers"]
 revoked_tokens_col = db["revoked_tokens"]
 
+users_col.create_index([("username", ASCENDING)], unique=True, sparse=True)
 containers_col.create_index([("container_no", ASCENDING)], unique=True)
 containers_col.create_index([("container_id", ASCENDING)], unique=True, sparse=True)
 

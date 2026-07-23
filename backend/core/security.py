@@ -7,7 +7,9 @@ from dotenv import load_dotenv
 _ENV_PATH = pathlib.Path(__file__).resolve().parent.parent.parent / ".env"
 load_dotenv(_ENV_PATH)
 
-SECRET_KEY = os.getenv("SECRET_KEY", "port-konteyner-gizli-anahtar-2024")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY .env dosyasında tanımlı değil. Sunucu başlatılamaz.")
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_HOURS = 8
 

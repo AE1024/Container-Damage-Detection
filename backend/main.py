@@ -1,15 +1,19 @@
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from auth.router import router as auth_router
 from containers.router import router as containers_router
 from yolo_model.service import load_model, is_model_loaded
+from ocr.service import preload_reader
 from core.database import client as mongo_client
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    load_model()
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, load_model)
+    await loop.run_in_executor(None, preload_reader)
     yield
 
 
@@ -17,7 +21,7 @@ app = FastAPI(title="Port Konteyner Takip API", version="2.0.0", lifespan=lifesp
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

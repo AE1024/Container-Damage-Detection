@@ -19,11 +19,12 @@ async function request(method, path, body, isForm = false) {
 
 export const api = {
   /* AUTH */
-  login:         (body) => request('POST', '/auth/login',       body),
-  register:      (body) => request('POST', '/auth/register',    body),
-  logout:        ()     => request('POST', '/auth/logout'),
-  me:            ()     => request('GET',  '/auth/me'),
-  updateProfile: (body) => request('PUT',  '/auth/me/profile',  body),
+  login:          (body)     => request('POST', '/auth/login',                body),
+  register:       (body)     => request('POST', '/auth/register',             body),
+  logout:         ()         => request('POST', '/auth/logout'),
+  me:             ()         => request('GET',  '/auth/me'),
+  updateProfile:  (body)     => request('PUT',  '/auth/me/profile',           body),
+  checkUsername:  (username) => request('GET',  `/auth/check-username/${encodeURIComponent(username)}`),
 
   /* CONTAINERS */
   analyze:          (form)   => request('POST',   '/containers/analyze',  form, true),
@@ -33,10 +34,13 @@ export const api = {
     if (params?.date_from)      q.set('date_from',      params.date_from)
     if (params?.date_to)        q.set('date_to',        params.date_to)
     if (params?.limit)          q.set('limit',          params.limit)
-    if (params?.container_no)   q.set('container_no',   params.container_no)
-    if (params?.container_type) q.set('container_type', params.container_type)
-    if (params?.company_name)   q.set('company_name',   params.company_name)
+    if (params?.container_no)     q.set('container_no',      params.container_no)
+    if (params?.container_type)   q.set('container_type',    params.container_type)
+    if (params?.company_name)     q.set('company_name',      params.company_name)
+    if (params?.arrive_port)      q.set('arrive_port',       params.arrive_port)
+    if (params?.destination_port) q.set('destination_port',  params.destination_port)
     return request('GET', `/containers/list?${q}`)
   },
   deleteContainer: (no) => request('DELETE', `/containers/${no}`),
+  getBicMap:       ()    => request('GET',    '/containers/bic-map'),
 }

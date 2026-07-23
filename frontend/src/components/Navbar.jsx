@@ -64,7 +64,9 @@ export default function Navbar({ activeTab, onTabChange }) {
         </button>
         <div className={styles.userInfo}>
           <span className={styles.userName}>{user?.full_name}</span>
-          <span className={styles.userCompany}>{user?.company}</span>
+          <span className={styles.userCompany}>
+            {user?.username ? `@${user.username}` : user?.company}
+          </span>
         </div>
         <span className={`chip ${styles.roleBadge} ${user?.role === 'admin' ? 'chip-lavender' : 'chip-mist'}`}>
           {user?.role}

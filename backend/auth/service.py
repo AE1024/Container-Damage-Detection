@@ -12,22 +12,15 @@ def _verify(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
-def user_exists(first_name: str, last_name: str, password: str) -> bool:
-    """Aynı isim + aynı şifre kombinasyonu zaten kayıtlıysa True döner."""
-    users = users_col.find({
-        "first_name": first_name.strip().lower(),
-        "last_name":  last_name.strip().lower(),
-    })
-    for u in users:
-        if _verify(password, u["password_hash"]):
-            return True
-    return False
+def username_exists(username: str) -> bool:
+    return users_col.find_one({"username": username.strip().lower()}) is not None
 
 
-def register_user(first_name: str, last_name: str, company: str, password: str) -> dict:
+def register_user(first_name: str, last_name: str, username: str, company: str, password: str) -> dict:
     user = {
         "first_name":    first_name.strip().lower(),
         "last_name":     last_name.strip().lower(),
+        "username":      username.strip().lower(),
         "company":       company.strip(),
         "password_hash": _hash(password),
         "role":          "operator",
@@ -37,15 +30,14 @@ def register_user(first_name: str, last_name: str, company: str, password: str) 
     return user
 
 
-def authenticate_user(first_name: str, last_name: str, password: str) -> dict | None:
-    """Aynı isimde birden fazla hesap olabilir; şifreyle doğru olanı bul."""
-    users = users_col.find({
+def authenticate_user(username: str, first_name: str, last_name: str, password: str) -> dict | None:
+    user = users_col.find_one({
+        "username":   username.strip().lower(),
         "first_name": first_name.strip().lower(),
         "last_name":  last_name.strip().lower(),
     })
-    for user in users:
-        if _verify(password, user["password_hash"]):
-            return user
+    if user and _verify(password, user["password_hash"]):
+        return user
     return None
 
 def update_profile(user_id: str, first_name: Optional[str], last_name: Optional[str], company: Optional[str], password: Optional[str]) -> dict:
@@ -72,3 +64,6 @@ def update_profile(user_id: str, first_name: Optional[str], last_name: Optional[
         return {"status": "success"}
 
     return {"status": "no_changes"}
+
+def delete_user(user_id: str) -> None:
+    users_col.delete_one({"_id": ObjectId(user_id)})

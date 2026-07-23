@@ -93,6 +93,9 @@ export default function ProfileModal({ onClose }) {
           <div className={styles.avatarLg}>{initials}</div>
           <div>
             <p className={styles.name}>{user?.full_name}</p>
+            {user?.username && (
+              <p className={styles.username}>@{user.username}</p>
+            )}
             <p className={styles.meta}>{user?.company} · {user?.role}</p>
           </div>
           <button className={styles.closeBtn} onClick={onClose} aria-label="Kapat">

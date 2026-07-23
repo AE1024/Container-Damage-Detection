@@ -1,10 +1,14 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { api } from '../api'
 import { useToast } from '../App'
 import styles from './AnalyzeTab.module.css'
 
 const MAX_FILES = 6
 const ACCEPT    = ['image/jpeg', 'image/png', 'image/webp']
+
+function makePreviewUrls(fileList) {
+  return fileList.map(f => URL.createObjectURL(f))
+}
 
 export default function AnalyzeTab({ onSendToRegister }) {
   const [files,    setFiles]    = useState([])
@@ -13,8 +17,13 @@ export default function AnalyzeTab({ onSendToRegister }) {
   const [loading,  setLoading]  = useState(false)
   const [dragging, setDragging] = useState(false)
 
-  const inputRef         = useRef(null)
-  const { showToast }    = useToast()
+  const inputRef      = useRef(null)
+  const { showToast } = useToast()
+
+  // Eski object URL'lerini temizle (bellek sızıntısını önler)
+  useEffect(() => {
+    return () => { previews.forEach(url => URL.revokeObjectURL(url)) }
+  }, [previews])
 
   const addFiles = useCallback((newFiles) => {
     const valid = Array.from(newFiles).filter(f => ACCEPT.includes(f.type))
@@ -22,8 +31,7 @@ export default function AnalyzeTab({ onSendToRegister }) {
 
     setFiles(prev => {
       const merged = [...prev, ...valid].slice(0, MAX_FILES)
-      const urls   = merged.map(f => URL.createObjectURL(f))
-      setPreviews(urls)
+      setPreviews(makePreviewUrls(merged))
       return merged
     })
     setResults(null)
@@ -32,7 +40,7 @@ export default function AnalyzeTab({ onSendToRegister }) {
   const removeFile = (idx) => {
     setFiles(prev => {
       const next = prev.filter((_, i) => i !== idx)
-      setPreviews(next.map(f => URL.createObjectURL(f)))
+      setPreviews(makePreviewUrls(next))
       return next
     })
   }

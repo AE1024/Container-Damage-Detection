@@ -1,10 +1,11 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, UploadFile, File, HTTPException
 from yolo_model.service import AnalysisService
-from llm.service import extract_container_info
+from ocr.service import extract_container_info
 from containers.schema import ContainerData
 from containers.service import save_container, get_all_containers, delete_container
 from core.dependencies import get_current_user
+from core.bic_table import BIC_COMPANY_MAP
 import asyncio
 
 router = APIRouter(prefix="/containers", tags=["Containers"])
@@ -81,6 +82,8 @@ def list_containers(
     container_no: Optional[str] = Query(None, description="Konteyner numarası (kısmi arama)"),
     container_type: Optional[str] = Query(None, description="Konteyner tipi (tam eşleşme)"),
     company_name: Optional[str] = Query(None, description="Şirket adı (kısmi arama)"),
+    arrive_port: Optional[str] = Query(None, description="Geliş limanı (tam eşleşme)"),
+    destination_port: Optional[str] = Query(None, description="Varış limanı (tam eşleşme)"),
 ):
     owner_id = None if current_user.get("role") == "admin" else current_user["sub"]
     containers = get_all_containers(
@@ -91,8 +94,15 @@ def list_containers(
         container_no=container_no,
         container_type=container_type,
         company_name=company_name,
+        arrive_port=arrive_port,
+        destination_port=destination_port,
     )
     return {"total": len(containers), "containers": containers}
+
+
+@router.get("/bic-map")
+def get_bic_map(_: dict = Depends(get_current_user)):
+    return BIC_COMPANY_MAP
 
 
 @router.delete("/{container_no}")

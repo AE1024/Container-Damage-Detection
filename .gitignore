@@ -5,10 +5,11 @@
 __pycache__/
 *.py[cod]
 
-.claude/
-
 # Çevre değişkenleri
 .env
+
+# Frontend bağımlılıkları
+frontend/node_modules
 
 # İşletim sistemi dosyaları
 .DS_Store
