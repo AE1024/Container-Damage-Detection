@@ -29,6 +29,8 @@ export default function ListTab({ isActive }) {
   const [arrivePort,     setArrivePort]     = useState('')
   const [destPort,       setDestPort]       = useState('')
 
+  const [confirmNo, setConfirmNo] = useState(null)
+
   const { user }      = useAuth()
   const { showToast } = useToast()
 
@@ -77,7 +79,6 @@ export default function ListTab({ isActive }) {
   }
 
   async function handleDelete(containerNo) {
-    if (!window.confirm(`"${containerNo}" numaralı konteyneri silmek istediğinizden emin misiniz?`)) return
     try {
       await api.deleteContainer(containerNo)
       showToast(`${containerNo} silindi.`, 'success')
@@ -85,6 +86,8 @@ export default function ListTab({ isActive }) {
       setTotal(t => t - 1)
     } catch (err) {
       showToast(err.message, 'error')
+    } finally {
+      setConfirmNo(null)
     }
   }
 
@@ -232,12 +235,24 @@ export default function ListTab({ isActive }) {
                       <td className={styles.registeredBy}>{c.registered_by}</td>
                       <td className={styles.date}>{c.created_at}</td>
                       <td>
-                        <button
-                          className="btn btn-danger-sm"
-                          onClick={() => handleDelete(c.container_no)}
-                        >
-                          <TrashIcon /> Sil
-                        </button>
+                        {confirmNo === c.container_no ? (
+                          <div className={styles.confirmCell}>
+                            <span className={styles.confirmText}>Emin misiniz?</span>
+                            <button className="btn btn-danger-sm" onClick={() => handleDelete(c.container_no)}>
+                              Evet, Sil
+                            </button>
+                            <button className="btn btn-ghost sm" onClick={() => setConfirmNo(null)}>
+                              İptal
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="btn btn-danger-sm"
+                            onClick={() => setConfirmNo(c.container_no)}
+                          >
+                            <TrashIcon /> Sil
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -71,13 +71,13 @@ class TestContainerSchema:
 class TestAuthSchema:
     def test_valid_register(self):
         r = RegisterRequest(
-            first_name="Anıl",
-            last_name="Elmaz",
-            username="anil_test",
+            first_name="A",
+            last_name="E",
+            username="a_test",
             company="CoreX",
             password="sifre123",
         )
-        assert r.username == "anil_test"
+        assert r.username == "a_test"
 
     def test_username_too_short(self):
         with pytest.raises(ValidationError):
@@ -90,27 +90,28 @@ class TestAuthSchema:
         with pytest.raises(ValidationError):
             RegisterRequest(
                 first_name="A", last_name="B",
-                username="anil elmaz", company="C", password="123456",
+                username="a test", company="C", password="123456",
             )
 
     def test_password_too_short(self):
         with pytest.raises(ValidationError):
             RegisterRequest(
                 first_name="A", last_name="B",
-                username="anil_test", company="C", password="123",
+                username="a_test", company="C", password="123",
             )
 
     def test_login_only_username_password_required(self):
         # Ad/soyad artık opsiyonel
-        req = LoginRequest(username="anil_test", password="sifre123")
+        req = LoginRequest(username="a_test", password="sifre123")
         assert req.first_name is None
         assert req.last_name is None
 
     def test_login_with_optional_names(self):
         req = LoginRequest(
-            username="anil_test",
+            username="a_test",
             password="sifre123",
-            first_name="Anıl",
-            last_name="Elmaz",
+            first_name="A",
+            last_name="E",
         )
-        assert req.first_name == "Anıl"
+        assert req.first_name == "A"
+        assert req.last_name == "E"
