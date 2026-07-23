@@ -17,13 +17,14 @@ The system combines user authentication, container registration/listing, and AI-
 | Layer | Technology |
 |-------|------------|
 | **Backend** | Python, FastAPI, Uvicorn |
-| **Database** | MongoDB (PyMongo) |
+| **Database** | MongoDB Atlas (PyMongo) |
 | **Authentication** | JWT (python-jose), bcrypt |
 | **Image Processing** | OpenCV, Pillow, NumPy |
 | **AI / Damage Model** | YOLO — Roboflow Inference API |
-| **LLM / Container OCR** | Groq API — `qwen/qwen3.6-27b` (vision) + `llama-3.3-70b-versatile` (judge) |
+| **OCR / Container No** | EasyOCR |
 | **Data Validation** | Pydantic v2 |
 | **Frontend** | React 18, Vite |
+| **CI/CD** | GitHub Actions |
 
 ---
 
@@ -31,11 +32,13 @@ The system combines user authentication, container registration/listing, and AI-
 
 - **AI-Powered Damage Analysis** — Upload up to 6 JPG/PNG/WebP images; run a YOLO model to detect dents, rust, and holes
 - **Bounding Box Visualization** — Detected damages are drawn on the image with red boxes and confidence score labels
-- **LLM Container Number Detection** — Groq vision model (`qwen/qwen3.6-27b`) reads the ISO 6346 container number from the image; `llama-3.3-70b-versatile` validates the format
+- **OCR Container Number Detection** — EasyOCR reads the ISO 6346 container number from the image
 - **Company Identification** — Automatically resolves the company name from the BIC code lookup table
-- **Container Registration** — Add containers using internationally standardized number format (e.g. `MSCU1234567`)
-- **Container List & Filtering** — Filter records by number, cargo type, company, and date range
-- **JWT Authentication** — Secure registration, login, and session management
+- **Container Registration** — Add containers with internationally standardized number format (e.g. `MSCU1234567`) and BIC validation
+- **Container List & Filtering** — Filter records by number, cargo type, company, port, and date range
+- **Inline Delete Confirmation** — A confirmation step appears in-place when the delete button is clicked (no browser popup)
+- **JWT Authentication** — Secure registration, login, and session management with TTL-based token invalidation
+- **Automated Testing** — GitHub Actions runs 38 tests on every push (21 unit + 17 integration)
 
 ---
 
@@ -43,31 +46,41 @@ The system combines user authentication, container registration/listing, and AI-
 
 ```
 Container-Damage-Detection/
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # GitHub Actions CI/CD
 ├── backend/
-│   ├── main.py                  # FastAPI application entry point
+│   ├── main.py                  # FastAPI entry point, lifespan
 │   ├── auth/
 │   │   ├── router.py            # Authentication endpoints
 │   │   ├── schema.py            # Pydantic schemas
 │   │   └── service.py           # User registration / login logic
 │   ├── containers/
-│   │   ├── router.py            # Container CRUD endpoints
+│   │   ├── router.py            # Container CRUD + BIC map endpoints
 │   │   ├── schema.py
 │   │   └── service.py
+│   ├── ocr/
+│   │   └── service.py           # EasyOCR container number detection
 │   ├── yolo_model/
 │   │   └── service.py           # Roboflow API integration, bbox drawing
-│   ├── llm/
-│   │   ├── service.py           # Groq vision + judge calls
-│   │   └── bic_table.py         # BIC code → company name lookup table
-│   └── core/
-│       ├── database.py          # MongoDB connection and collections
-│       ├── dependencies.py      # FastAPI dependency injection
-│       └── security.py          # JWT operations
+│   ├── core/
+│   │   ├── bic_table.py         # BIC code → company name lookup table
+│   │   ├── database.py          # MongoDB connection, collections, init_db()
+│   │   ├── dependencies.py      # FastAPI dependency injection
+│   │   └── security.py          # JWT operations
+│   └── tests/
+│       ├── test_bic.py          # BIC table unit tests
+│       ├── test_schema.py       # Pydantic schema unit tests
+│       └── test_integration.py  # Auth + container integration tests
 ├── frontend/
 │   ├── index.html
 │   ├── vite.config.js
-│   └── src/                     # React components
+│   └── src/
+│       ├── api.js               # API request layer
+│       ├── App.jsx
+│       └── components/          # React components
 ├── .env                         # Environment variables (not committed)
-└── requirements.txt             # Python dependencies
+└── requirements.txt             # Pinned Python dependencies
 ```
 
 ---
@@ -78,9 +91,8 @@ Container-Damage-Detection/
 
 - Python 3.12+
 - Node.js 18+
-- MongoDB (local install or [MongoDB Atlas](https://www.mongodb.com/atlas))
+- [MongoDB Atlas](https://www.mongodb.com/atlas) account
 - [Roboflow](https://roboflow.com) account (for YOLO damage model API key)
-- [Groq](https://console.groq.com) account (for LLM container number detection)
 
 ---
 
@@ -98,20 +110,18 @@ cd Container-Damage-Detection
 Create a `.env` file in the project root:
 
 ```env
-MONGODB_URI=mongodb://localhost:27017
+MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/
 DB_NAME=port_konteyner
-SECRET_KEY=your_secret_key_here
+SECRET_KEY=a_long_random_secret_key
 
 # Roboflow — YOLO damage detection
 RF_API_KEY=your_roboflow_api_key
 RF_MODEL_ID=container-damage-ithvn/1
 RF_SERVER=https://detect.roboflow.com
-
-# Groq — LLM container number / company detection
-GROQ_API_KEY=your_groq_api_key
 ```
 
-> The `.env` file is listed in `.gitignore` — never commit it to the repository.
+> The `.env` file is listed in `.gitignore` — never commit it to the repository.  
+> If `SECRET_KEY` is missing, the server will refuse to start.
 
 ---
 
@@ -154,29 +164,62 @@ http://localhost:5173
 
 ---
 
-## LLM Pipeline
+### 5. Run Tests
 
-During image analysis, the Groq LLM pipeline runs in parallel with YOLO damage detection:
+```bash
+cd backend
 
-1. **Vision** — `qwen/qwen3.6-27b` reads the ISO 6346 container number from the image
-2. **Judge** — `llama-3.3-70b-versatile` verifies that the extracted string is a valid container code
-3. **BIC Lookup** — If a valid number is found, the first 4 letters are matched against the BIC table to return the company name
+# Unit tests (no DB needed, fast)
+../.venv/bin/pytest tests/test_bic.py tests/test_schema.py -v
+
+# Integration tests (requires live MongoDB Atlas connection)
+../.venv/bin/pytest tests/test_integration.py -v
+
+# All tests
+../.venv/bin/pytest tests/ -v
+```
 
 ---
 
 ## API Overview
 
+### Authentication
+
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| POST | `/api/v1/register` | Register a new user | — |
-| POST | `/api/v1/login` | Login → returns JWT token | — |
-| POST | `/api/v1/logout` | Invalidate token | ✓ |
-| GET | `/api/v1/me` | Current user info | ✓ |
-| GET | `/api/v1/containers/list` | List containers | ✓ |
-| POST | `/api/v1/containers/register` | Add container | ✓ |
+| POST | `/api/v1/auth/register` | Register a new user | — |
+| POST | `/api/v1/auth/login` | Login → returns JWT token | — |
+| POST | `/api/v1/auth/logout` | Invalidate token | ✓ |
+| GET | `/api/v1/auth/me` | Current user info | ✓ |
+| DELETE | `/api/v1/auth/me` | Delete account | ✓ |
+| GET | `/api/v1/auth/check-username/{username}` | Check username availability | — |
+
+### Containers
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/v1/containers/list` | Filtered container list | ✓ |
+| POST | `/api/v1/containers/register` | Add container (with BIC validation) | ✓ |
 | DELETE | `/api/v1/containers/{no}` | Delete container | ✓ |
-| POST | `/api/v1/containers/analyze` | YOLO damage + LLM number analysis | ✓ |
-| GET | `/health` | System health check | — |
+| POST | `/api/v1/containers/analyze` | YOLO damage + EasyOCR analysis | ✓ |
+| GET | `/api/v1/containers/bic-map` | BIC code → company name table | ✓ |
+
+### System
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | System health check |
+
+---
+
+## CI/CD
+
+GitHub Actions runs two jobs on every push to `main`:
+
+- **Backend** — `pip install`, `pytest` (38 tests: 21 unit + 17 integration)
+- **Frontend** — `npm ci`, `npm run build`
+
+Required GitHub Secrets: `MONGODB_URI`, `RF_API_KEY`
 
 ---
 
