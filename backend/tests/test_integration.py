@@ -11,14 +11,14 @@ BASE   = "/api/v1"
 
 # ── Sabitler ────────────────────────────────────────────────────────────────
 TEST_USER = {
-    "first_name": "CI",
+    "first_name": "AB",
     "last_name":  "Test",
     "username":   "ci_test_runner",
-    "company":    "TestCo",
-    "password":   "sifre_ci_123",
+    "company":    "TestCompany",
+    "password":   "sifre_123",
 }
 TEST_CONTAINER = {
-    "container_no":    "MSCU9990001",
+    "container_no":    "MSCU9990222",
     "container_type":  "Kuru Yük",
     "company_name":    "MEDITERRANEAN SHIPPING COMPANY (MSC)",
     "arrive_port":     "Ambarlı Terminali",
