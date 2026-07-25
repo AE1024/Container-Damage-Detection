@@ -11,14 +11,14 @@ BASE   = "/api/v1"
 
 # ── Sabitler ────────────────────────────────────────────────────────────────
 TEST_USER = {
-    "first_name": "AB",
+    "first_name": "CI",
     "last_name":  "Test",
     "username":   "ci_test_runner",
     "company":    "TestCompany",
     "password":   "sifre_123",
 }
 TEST_CONTAINER = {
-    "container_no":    "MSCU9990222",
+    "container_no":    "MSCU9990001",
     "container_type":  "Kuru Yük",
     "company_name":    "MEDITERRANEAN SHIPPING COMPANY (MSC)",
     "arrive_port":     "Ambarlı Terminali",
@@ -26,18 +26,16 @@ TEST_CONTAINER = {
 }
 
 
-# ── Yardımcı: token al (kayıt veya login) ───────────────────────────────────
+# ── Yardımcı: token al ──────────────────────────────────────────────────────
 def _get_token() -> str:
-    """Test kullanıcısını kayıt et, token döndür. Zaten varsa login yap."""
+    """
+    Test kullanıcısını her seferinde sıfırdan oluşturur.
+    Atlas'ta kalan stale veriye (farklı şifre / farklı format) karşı dayanıklı.
+    """
+    from core.database import users_col
+    users_col.delete_many({"username": TEST_USER["username"]})
     res = client.post(f"{BASE}/auth/register", json=TEST_USER)
-    if res.status_code == 201:
-        return res.json()["access_token"]
-    # Kullanıcı zaten varsa login
-    res = client.post(f"{BASE}/auth/login", json={
-        "username": TEST_USER["username"],
-        "password": TEST_USER["password"],
-    })
-    assert res.status_code == 200, f"Login başarısız: {res.text}"
+    assert res.status_code == 201, f"Register başarısız: {res.text}"
     return res.json()["access_token"]
 
 
@@ -149,7 +147,7 @@ class TestContainers:
         )
         assert res.status_code == 201
         data = res.json()["data"]
-        assert data["container_no"] == "MSCU9990001"
+        assert data["container_no"] == TEST_CONTAINER["container_no"]
         assert data["registered_by"] == "Ci Test"
 
     def test_register_duplicate_container(self):
@@ -171,7 +169,7 @@ class TestContainers:
         res = client.get(f"{BASE}/containers/list", headers=_auth(self.token))
         assert res.status_code == 200
         nos = [c["container_no"] for c in res.json()["containers"]]
-        assert "MSCU9990001" in nos
+        assert TEST_CONTAINER["container_no"] in nos
 
     def test_list_filter_by_container_no(self):
         client.post(f"{BASE}/containers/register",
@@ -187,7 +185,7 @@ class TestContainers:
         client.post(f"{BASE}/containers/register",
                     json=TEST_CONTAINER, headers=_auth(self.token))
         res = client.delete(
-            f"{BASE}/containers/MSCU9990001",
+            f"{BASE}/containers/{TEST_CONTAINER['container_no']}",
             headers=_auth(self.token)
         )
         assert res.status_code == 200
