@@ -84,6 +84,7 @@ def list_containers(
     company_name: Optional[str] = Query(None, description="Şirket adı (kısmi arama)"),
     arrive_port: Optional[str] = Query(None, description="Geliş limanı (tam eşleşme)"),
     destination_port: Optional[str] = Query(None, description="Varış limanı (tam eşleşme)"),
+    is_damaged: Optional[bool] = Query(None, description="Hasar durumu filtresi"),
 ):
     owner_id = None if current_user.get("role") == "admin" else current_user["sub"]
     containers = get_all_containers(
@@ -96,6 +97,7 @@ def list_containers(
         company_name=company_name,
         arrive_port=arrive_port,
         destination_port=destination_port,
+        is_damaged=is_damaged,
     )
     return {"total": len(containers), "containers": containers}
 

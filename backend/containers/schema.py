@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 import re
 
@@ -17,6 +18,7 @@ class ContainerData(BaseModel):
     company_name: str = Field(description="Şirket adı")
     arrive_port: str = Field(description="Geliş limanı")
     destination_port: str = Field(description="Varış limanı")
+    is_damaged: Optional[bool] = Field(default=None, description="Hasar durumu")
 
     @field_validator("container_no")
     @classmethod

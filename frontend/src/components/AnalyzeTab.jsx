@@ -242,7 +242,7 @@ function ResultCard({ result, index, onSendToRegister }) {
           {container_no && (
             <button
               className={styles.sendToRegisterBtn}
-              onClick={() => onSendToRegister?.(container_no, company_name)}
+              onClick={() => onSendToRegister?.(container_no, company_name, hasar_var)}
             >
               <RegisterIcon /> Konteyner Kayıt'a Gönder
             </button>

@@ -41,11 +41,12 @@ function getBicCompany(bicMap, containerNo) {
 }
 
 
-export default function RegisterTab({ prefillContainerNo = '', prefillCompanyName = '', prefillKey = 0, onPrefillUsed }) {
+export default function RegisterTab({ prefillContainerNo = '', prefillCompanyName = '', prefillIsDamaged = null, prefillKey = 0, onPrefillUsed }) {
   const [msg,         setMsg]         = useState(null)
   const [loading,     setLoading]     = useState(false)
   const [containerNo, setContainerNo] = useState(prefillContainerNo)
   const [companyName, setCompanyName] = useState(prefillCompanyName)
+  const [isDamaged,   setIsDamaged]   = useState(prefillIsDamaged)
   const [bicMap,      setBicMap]      = useState({})
   const { showToast }                 = useToast()
 
@@ -74,6 +75,7 @@ export default function RegisterTab({ prefillContainerNo = '', prefillCompanyNam
     if (prefillKey === 0) return
     setContainerNo(prefillContainerNo)
     setCompanyName(prefillCompanyName)
+    setIsDamaged(prefillIsDamaged)
   }, [prefillKey])
 
   const isAutofilled = !!(prefillContainerNo || prefillCompanyName)
@@ -83,12 +85,14 @@ export default function RegisterTab({ prefillContainerNo = '', prefillCompanyNam
     setMsg(null)
     setLoading(true)
     const fd = new FormData(e.target)
+    const damagedVal = fd.get('is_damaged')
     const body = {
       container_no:     (fd.get('container_no') || '').toUpperCase().replace(/\s/g, ''),
       container_type:   fd.get('container_type'),
       company_name:     (fd.get('company_name') || '').toLocaleUpperCase('en-US'),
       arrive_port:      fd.get('arrive_port'),
       destination_port: fd.get('destination_port'),
+      is_damaged:       damagedVal === '' ? null : damagedVal === 'true',
     }
     try {
       await api.registerContainer(body)
@@ -97,6 +101,7 @@ export default function RegisterTab({ prefillContainerNo = '', prefillCompanyNam
       e.target.reset()
       setContainerNo('')
       setCompanyName('')
+      setIsDamaged(null)
       onPrefillUsed?.()
     } catch (err) {
       setMsg({ type: 'error', text: err.message })
@@ -115,7 +120,7 @@ export default function RegisterTab({ prefillContainerNo = '', prefillCompanyNam
       </div>
 
       <div className={styles.card}>
-        <form onSubmit={handleSubmit} onReset={() => { setMsg(null); setContainerNo(''); setCompanyName(''); setArrivePort(''); setDestPort('') }}>
+        <form onSubmit={handleSubmit} onReset={() => { setMsg(null); setContainerNo(''); setCompanyName(''); setArrivePort(''); setDestPort(''); setIsDamaged(null) }}>
           {isAutofilled && (
             <div className={styles.autofillBanner}>
               <span>⚡ Hasar analizinden otomatik dolduruldu — geri kalan alanları tamamlayın.</span>
@@ -204,6 +209,27 @@ export default function RegisterTab({ prefillContainerNo = '', prefillCompanyNam
                 {COREX_PORTS.map(p => (
                   <option key={p} value={p}>{p}</option>
                 ))}
+              </select>
+            </div>
+
+            {/* Hasar Durumu */}
+            <div className="field">
+              <label>
+                Hasar Durumu
+                {prefillIsDamaged !== null && <span className="hint">Analizden otomatik</span>}
+              </label>
+              <select
+                name="is_damaged"
+                value={isDamaged === null ? '' : String(isDamaged)}
+                onChange={e => setIsDamaged(e.target.value === '' ? null : e.target.value === 'true')}
+                style={{
+                  borderColor: isDamaged === true ? '#ef4444' : isDamaged === false ? '#22c55e' : undefined,
+                  boxShadow: prefillIsDamaged !== null ? '0 0 0 2px rgba(99,102,241,.15)' : undefined,
+                }}
+              >
+                <option value="">Belirtilmemiş</option>
+                <option value="true">⚠ Hasarlı</option>
+                <option value="false">✓ Hasarsız</option>
               </select>
             </div>
 

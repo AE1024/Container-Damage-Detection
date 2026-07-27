@@ -129,6 +129,37 @@
 
 .adminNote { color: var(--c-lavender); font-weight: 500; }
 
+.damageBadgeDanger {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #fee2e2;
+  color: #dc2626;
+  white-space: nowrap;
+}
+
+.damageBadgeSafe {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #dcfce7;
+  color: #16a34a;
+  white-space: nowrap;
+}
+
+.damageBadgeUnknown {
+  font-size: 13px;
+  color: var(--c-ash);
+}
+
 /* States */
 .stateRow {
   display: flex;

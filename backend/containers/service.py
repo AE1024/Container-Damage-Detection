@@ -55,6 +55,7 @@ def get_all_containers(
     company_name: str | None = None,
     arrive_port: str | None = None,
     destination_port: str | None = None,
+    is_damaged: bool | None = None,
 ) -> list[dict]:
     query: dict = {}
     if registered_by_id is not None:
@@ -80,6 +81,8 @@ def get_all_containers(
         query["arrive_port"] = arrive_port
     if destination_port:
         query["destination_port"] = destination_port
+    if is_damaged is not None:
+        query["is_damaged"] = is_damaged
 
     cursor = containers_col.find(query, {"_id": 0}).sort("created_at", -1).limit(limit)
     return [_serialize(r) for r in cursor]

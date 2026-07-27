@@ -16,12 +16,14 @@ export default function DashboardPage() {
   const [activeTab,          setActiveTab]          = useState('analyze')
   const [prefillContainerNo, setPrefillContainerNo] = useState('')
   const [prefillCompanyName, setPrefillCompanyName] = useState('')
+  const [prefillIsDamaged,   setPrefillIsDamaged]   = useState(null)
   const [prefillKey,         setPrefillKey]         = useState(0)
 
-  function handleSendToRegister(containerNo, companyName) {
+  function handleSendToRegister(containerNo, companyName, isDamaged) {
     setPrefillContainerNo(containerNo || '')
     setPrefillCompanyName(companyName || '')
-    setPrefillKey(k => k + 1)   // her tıklamada artar → RegisterTab her zaman sıfırlanır
+    setPrefillIsDamaged(isDamaged ?? null)
+    setPrefillKey(k => k + 1)
     setActiveTab('register-container')
   }
 
@@ -34,7 +36,7 @@ export default function DashboardPage() {
           const extraProps = tab === 'analyze'
             ? { onSendToRegister: handleSendToRegister }
             : tab === 'register-container'
-            ? { prefillContainerNo, prefillCompanyName, prefillKey, onPrefillUsed: () => { setPrefillContainerNo(''); setPrefillCompanyName('') } }
+            ? { prefillContainerNo, prefillCompanyName, prefillIsDamaged, prefillKey, onPrefillUsed: () => { setPrefillContainerNo(''); setPrefillCompanyName(''); setPrefillIsDamaged(null) } }
             : {}
           return (
             <div key={tab} style={{ display: activeTab === tab ? 'block' : 'none' }}>

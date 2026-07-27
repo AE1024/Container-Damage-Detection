@@ -28,6 +28,7 @@ export default function ListTab({ isActive }) {
   const [companyName,    setCompanyName]    = useState('')
   const [arrivePort,     setArrivePort]     = useState('')
   const [destPort,       setDestPort]       = useState('')
+  const [isDamaged,      setIsDamaged]      = useState('')
 
   const [confirmNo, setConfirmNo] = useState(null)
 
@@ -44,6 +45,7 @@ export default function ListTab({ isActive }) {
       company_name:     companyName    || undefined,
       arrive_port:      arrivePort     || undefined,
       destination_port: destPort       || undefined,
+      is_damaged:       isDamaged === '' ? undefined : isDamaged === 'true',
     }
   }
 
@@ -75,6 +77,7 @@ export default function ListTab({ isActive }) {
     setCompanyName('')
     setArrivePort('')
     setDestPort('')
+    setIsDamaged('')
     fetchList({ limit })
   }
 
@@ -91,7 +94,7 @@ export default function ListTab({ isActive }) {
     }
   }
 
-  const hasActiveFilters = dateFrom || dateTo || containerNo || containerType || companyName || arrivePort || destPort
+  const hasActiveFilters = dateFrom || dateTo || containerNo || containerType || companyName || arrivePort || destPort || isDamaged !== ''
 
   return (
     <div>
@@ -152,6 +155,14 @@ export default function ListTab({ isActive }) {
             <select value={destPort} onChange={e => setDestPort(e.target.value)}>
               <option value="">Tümü</option>
               {COREX_PORTS.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Hasar Durumu</label>
+            <select value={isDamaged} onChange={e => setIsDamaged(e.target.value)}>
+              <option value="">Tümü</option>
+              <option value="true">⚠ Hasarlı</option>
+              <option value="false">✓ Hasarsız</option>
             </select>
           </div>
         </div>
@@ -219,6 +230,7 @@ export default function ListTab({ isActive }) {
                     <th>Şirket</th>
                     <th>Geliş Limanı</th>
                     <th>Varış Limanı</th>
+                    <th>Hasar</th>
                     <th>Kaydeden</th>
                     <th>Tarih</th>
                     <th></th>
@@ -232,6 +244,11 @@ export default function ListTab({ isActive }) {
                       <td>{c.company_name}</td>
                       <td>{c.arrive_port}</td>
                       <td>{c.destination_port}</td>
+                      <td>
+                        {c.is_damaged === true && <span className={styles.damageBadgeDanger}>⚠ Hasarlı</span>}
+                        {c.is_damaged === false && <span className={styles.damageBadgeSafe}>✓ Hasarsız</span>}
+                        {c.is_damaged == null && <span className={styles.damageBadgeUnknown}>—</span>}
+                      </td>
                       <td className={styles.registeredBy}>{c.registered_by}</td>
                       <td className={styles.date}>{c.created_at}</td>
                       <td>

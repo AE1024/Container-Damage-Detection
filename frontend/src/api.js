@@ -39,6 +39,7 @@ export const api = {
     if (params?.company_name)     q.set('company_name',      params.company_name)
     if (params?.arrive_port)      q.set('arrive_port',       params.arrive_port)
     if (params?.destination_port) q.set('destination_port',  params.destination_port)
+    if (params?.is_damaged !== undefined && params?.is_damaged !== '') q.set('is_damaged', params.is_damaged)
     return request('GET', `/containers/list?${q}`)
   },
   deleteContainer: (no) => request('DELETE', `/containers/${no}`),
