@@ -29,7 +29,7 @@ Sistem; kullanıcı kimlik doğrulaması, konteyner kayıt/listeleme ve YZ taban
 ---
 
 ## Özellikler
-
+ 
 - **YZ Destekli Hasar Analizi** — JPG/PNG/WebP formatında 6 adede kadar görüntü yükle; göçük (Dent), pas (Rust) ve delik (Hole) tespiti için YOLO modeli çalıştır
 - **Bounding Box Görselleştirme** — Tespit edilen hasarlar kırmızı kutular ve güven skoru etiketiyle görüntü üzerine çizilir
 - **OCR ile Konteyner Numarası Tespiti** — EasyOCR ile görselden ISO 6346 formatındaki konteyner numarası okunur
